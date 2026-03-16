@@ -1,0 +1,356 @@
+name: komodo-wallet-desktop CI
+
+on:
+  push:
+    branches:
+      - nogeo
+
+env:
+  DEX_API: "kdf_kwd"
+  DEX_RPCPORT: 7762
+  DEX_RPC: "http://127.0.0.1:7762"
+  DEX_PROJECT_NAME: "komodo-wallet"
+  DEX_DISPLAY_NAME: "Komodo Wallet"
+  DEX_COMPANY: "KomodoPlatform"
+  DEX_VERSION: "0.8.2"
+  DEX_WEBSITE: "https://atomicdex.io/"
+  VCPKG_BINARY_SOURCES: default,readwrite
+  VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/vcpkg_cache
+  RUNVCPKG_VCPKG_ROOT: ${{ github.workspace }}\komodo-wallet-desktop\ci_tools_atomic_dex\vcpkg-repo
+  VCPKG_ROOT: ${{ github.workspace }}\komodo-wallet-desktop\ci_tools_atomic_dex\vcpkg-repo
+  packages_to_install: llvm ninja git 7zip
+  cache_version: v0
+  cache_hash_seed_file_path: './.github/workflows/cache_seed_file_for_scoop.txt'
+
+jobs:
+
+  ci-flow:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [
+            ubuntu-release,
+            ubuntu-debug,
+            osx-release,
+            windows-release
+        ]
+
+        include:
+          - name: ubuntu-release
+            os: ubuntu-24.04
+            type: 'Release'
+            typelc: 'release'
+            host: 'linux'
+
+          - name: ubuntu-debug
+            os: ubuntu-24.04
+            type: 'Debug'
+            typelc: 'debug'
+            host: 'linux'
+
+          - name: osx-release
+            os: macos-15-intel
+            qt: '5.15.2'
+            type: 'Release'
+            typelc: 'release'
+            host: 'mac'
+
+          - name: windows-release
+            os: windows-2022
+            qt: '5.15.2'
+            type: 'Release'
+            typelc: 'release'
+            host: 'windows'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          submodules: 'true'
+          fetch-depth: 0
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Set env variables (MacOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "CXX=/usr/local/opt/llvm/bin/clang++" >> $GITHUB_ENV
+          echo "CC=/usr/local/opt/llvm/bin/clang" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_TYPE=${{ matrix.type }}" >> $GITHUB_ENV
+          echo "VCPKG_BUILD_TYPE=${{ matrix.typelc }}" >> $GITHUB_ENV
+
+      - name: Set env variables (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "CMAKE_BUILD_TYPE=${{ matrix.type }}" >> $GITHUB_ENV
+          echo "VCPKG_BUILD_TYPE=${{ matrix.typelc }}" >> $GITHUB_ENV
+
+      - name: Set env variables (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "CMAKE_BUILD_TYPE=${{ matrix.type }}" >> $env:GITHUB_ENV
+          echo "VCPKG_BUILD_TYPE=${{ matrix.typelc }}" >> $env:GITHUB_ENV
+
+      - name: Expose GitHub Runtime Env
+        uses: crazy-max/ghaction-github-runtime@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install MSVC
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build libwally (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd '${{ github.workspace }}'
+          git clone https://github.com/ElementsProject/libwally-core --recurse-submodules -b release_0.9.2
+          cd '${{ github.workspace }}\libwally-core'
+          git submodule init
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          $env:LIBWALLY_DIR='${{ github.workspace }}\libwally-core'
+          "$env:LIBWALLY_DIR\tools\msvc\gen_ecmult_static_context.bat"
+          copy src\ccan\ccan\str\hex\hex.c src\ccan\ccan\str\hex\hex_.c
+          copy src\ccan\ccan\base64\base64.c src\ccan\ccan\base64\base64_.c
+          copy src\amalgamation\windows_config\libsecp256k1-config.h src\secp256k1\src\libsecp256k1-config.h
+          cl /utf-8 /DUSE_ECMULT_STATIC_PRECOMPUTATION /DECMULT_WINDOW_SIZE=15 /DWALLY_CORE_BUILD /DHAVE_CONFIG_H /DSECP256K1_BUILD /I$env:LIBWALLY_DIR\src\amalgamation\windows_config /I$env:LIBWALLY_DIR /I$env:LIBWALLY_DIR\src /I$env:LIBWALLY_DIR\include /I$env:LIBWALLY_DIR\src\ccan /I$env:LIBWALLY_DIR\src\ccan\base64 /I$env:LIBWALLY_DIR\src\secp256k1 /Zi /LD src/aes.c src/anti_exfil.c src/base58.c src/base64.c src/bech32.c src/bip32.c src/bip38.c src/bip39.c src/bip85.c src/blech32.c src/coins.c src/descriptor.c src/ecdh.c src/elements.c src/hex.c src/hmac.c src/internal.c src/mnemonic.c src/pbkdf2.c src/map.c src/address.c src/pullpush.c src/psbt.c src/script.c src/scrypt.c src/sign.c src/symmetric.c src/transaction.c src/wif.c src/wordlist.c src/ccan/ccan/crypto/ripemd160/ripemd160.c src/ccan/ccan/crypto/sha256/sha256.c src/ccan/ccan/crypto/sha512/sha512.c src/ccan/ccan/base64/base64_.c src\ccan\ccan\str\hex\hex_.c src/secp256k1/src/secp256k1.c src/secp256k1/src/precomputed_ecmult_gen.c src/secp256k1/src/precomputed_ecmult.c /Fewally.dll
+
+      - name: Install QT (macOS)
+        if: runner.os == 'macOS'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt }}
+          host: ${{ matrix.host }}
+          dir: '${{ github.workspace }}'
+          target: 'desktop'
+          modules: 'qtcharts debug_info qtwebengine'
+          tools: 'tools_ifw'
+          setup-python: 'false'
+          cache: true
+
+      - name: Install QT (Windows)
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ matrix.qt }}
+          host: ${{ matrix.host }}
+          dir: 'C:\'
+          target: 'desktop'
+          modules: 'qtcharts debug_info qtwebengine'
+          tools: 'tools_ifw'
+          cache: true
+
+      - name: Create scoop cache seed file (Windows)
+        if: runner.os == 'Windows'
+        run: echo ${{ env.packages_to_install }} >> ${{ env.cache_hash_seed_file_path }}
+
+      - name: Restore scoop cache (Windows)
+        if: runner.os == 'Windows'
+        id: restore_cache
+        uses: actions/cache@v5
+        with:
+          path: '~/scoop'
+          key: cache_version_${{ env.cache_version }}-${{ hashFiles(env.cache_hash_seed_file_path) }}
+
+      - name: Install scoop (Windows)
+        if: ${{ (runner.os == 'Windows') && (steps.restore_cache.outputs.cache-hit != 'true') }}
+        uses: MinoruSekine/setup-scoop@v4.0.2
+        with:
+          install_scoop: 'true'
+          buckets: extras
+          apps: ${{ env.packages_to_install }}
+          scoop_update: 'true'
+          update_path: 'true'
+
+      - name: Setup scoop PATH (Windows)
+        if: ${{ (runner.os == 'Windows') && (steps.restore_cache.outputs.cache-hit == 'true') }}
+        uses: MinoruSekine/setup-scoop@v4.0.2
+        with:
+          install_scoop: 'false'
+          scoop_update: 'false'
+          update_path: 'true'
+
+      - name: Install brew deps (MacOS)
+        if: runner.os == 'macOS'
+        uses: gerlero/brew-install@v1
+        with:
+          packages: |
+            automake
+            gnu-sed
+            coreutils
+            gnu-getopt
+            llvm
+
+      - name: Install apt deps (Linux)
+        if: runner.os == 'Linux'
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          version: '${{ matrix.type }}-1.0'
+          execute_install_scripts: true
+          packages: autoconf bison build-essential curl gperf libcap-dev libpulse-dev libtool libssl-dev libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb1-dev libxcb-keysyms1-dev libxcb-render-util0-dev libxcb-xinerama0 libfuse2 libxcursor-dev libxcomposite-dev libxdamage-dev libxrandr-dev libxtst-dev libxss-dev libdbus-1-dev libevent-dev libfontconfig1-dev libgl1-mesa-dev libudev-dev libpci-dev libnss3-dev libasound2-dev libegl1-mesa-dev linux-libc-dev lsb-release ninja-build nodejs software-properties-common unzip wget zstd qtbase5-dev qtdeclarative5-dev qtquickcontrols2-5-dev qttools5-dev qtwebengine5-dev libqt5svg5-dev libqt5charts5-dev libqt5waylandclient5-dev qml-module-qtquick-controls qml-module-qtquick-controls2 qml-module-qtquick-dialogs qml-module-qtquick-extras qml-module-qtquick-layouts qml-module-qtquick-shapes qml-module-qtcharts qml-module-qtgraphicaleffects qml-module-qtwebengine qml-module-qt-labs-platform qml-module-qt-labs-settings
+
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo ./ci_tools_atomic_dex/ci_scripts/linux_script.sh
+
+      - name: Install deps (MacOS)
+        if: runner.os == 'macOS'
+        run: |
+          ./ci_tools_atomic_dex/ci_scripts/osx_script.sh
+
+      - name: vcpkg deps (All)
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ci_tools_atomic_dex/vcpkg-repo'
+          vcpkgJsonGlob: 'vcpkg.json'
+
+      - name: Cache vcpkg
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-${{ runner.os }}-${{ matrix.type }}-${{ hashFiles('vcpkg*.json') }}
+
+      - name: Build Komodo Wallet (MacOS)
+        if: runner.os == 'macOS'
+        run: |
+          xcrun --sdk macosx --show-sdk-path
+          export SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
+          ls $SDK_PATH
+          ls $HOME/sdk/MacOSX11.3.sdk
+          ls $(xcrun --show-sdk-path)/usr/include/c++
+          export QT_INSTALL_CMAKE_PATH=${{ github.workspace }}/Qt/${{ matrix.qt }}/clang_64/lib/cmake
+          export QT_ROOT=${{ github.workspace }}/Qt/${{ matrix.qt }}
+          export MACOSX_DEPLOYMENT_TARGET=11.3
+          export CC=clang
+          export CXX=clang++
+          export CXXFLAGS=-stdlib=libc++
+          export LDFLAGS=-stdlib=libc++
+          export CMAKE_BUILD_TYPE=${{ matrix.type }}
+          export VCPKG_BUILD_TYPE=${{ matrix.typelc }}
+          mkdir ci_tools_atomic_dex/build-${{ matrix.type }}
+          cd ci_tools_atomic_dex/build-${{ matrix.type }}
+          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ matrix.type }} ../../ -DCMAKE_OSX_SYSROOT=$HOME/sdk/MacOSX11.3.sdk -DCMAKE_OSX_DEPLOYMENT_TARGET=11.3
+          cmake --build . --config ${{ matrix.type }}
+          ninja install
+
+      - name: Build Komodo Wallet (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          export CMAKE_BUILD_TYPE=${{ matrix.type }}
+          export VCPKG_BUILD_TYPE=${{ matrix.typelc }}
+          mkdir ci_tools_atomic_dex/build-${{ matrix.type }}
+          cd ci_tools_atomic_dex/build-${{ matrix.type }}
+          cmake -GNinja -DCMAKE_BUILD_TYPE=${{ matrix.type }} ../../
+          cmake --build . --config ${{ matrix.type }}
+          ninja install
+
+      - name: Build Komodo Wallet (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $Env:QT_VERSION = "${{ matrix.qt }}"
+          $Env:CMAKE_BUILD_TYPE = "${{ matrix.type }}"
+          $Env:VCPKG_BUILD_TYPE = "${{ matrix.typelc }}"
+          .\ci_tools_atomic_dex\ci_scripts\windows_script.ps1
+
+      - name: Upload env variable for artifacts (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "artifact_name_zstd=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-$(git rev-parse --short HEAD).tar.zst" >> $GITHUB_ENV
+          echo "artifact_name_zip=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-$(git rev-parse --short HEAD).zip" >> $GITHUB_ENV
+          echo "artifact_name_appimage=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-$(git rev-parse --short HEAD)-x86_64.AppImage" >> $GITHUB_ENV
+          echo "target_name_zstd=${{ env.DEX_PROJECT_NAME }}-linux-$(git rev-parse --short HEAD).tar.zst" >> $GITHUB_ENV
+          echo "target_name_zip=${{ env.DEX_PROJECT_NAME }}-linux-$(git rev-parse --short HEAD).zip" >> $GITHUB_ENV
+          echo "target_name_appimage=${{ env.DEX_PROJECT_NAME }}-linux-$(git rev-parse --short HEAD)-x86_64.AppImage" >> $GITHUB_ENV
+
+      - name: Rename files to desired artifact name
+        if: runner.os == 'Linux'
+        run: |
+             mv ./bundled/linux/${{ env.target_name_zstd }} ./bundled/linux/${{ env.artifact_name_zstd }}
+             mv ./bundled/linux/${{ env.target_name_zip }} ./bundled/linux/${{ env.artifact_name_zip }}
+             mv ./bundled/linux/${{ env.target_name_appimage }} ./bundled/linux/${{ env.artifact_name_appimage }}
+
+      - name: Upload bundle artifact (Linux ZSTD)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/linux/${{ env.artifact_name_zstd }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload bundle artifact (Linux ZIP)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/linux/${{ env.artifact_name_zip }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload bundle artifact (Linux AppImage)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/linux/${{ env.artifact_name_appimage }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload env variable for artifacts (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "artifact_name_dmg=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-$(git rev-parse --short HEAD).dmg" >> $GITHUB_ENV
+
+      - name: Rename files to desired artifact name
+        if: runner.os == 'macOS'
+        run: |
+             mv ./bundled/osx/${{ env.DEX_PROJECT_NAME }}.dmg ./bundled/osx/${{ env.artifact_name_dmg }}
+
+      - name: Upload artifacts (MacOS dmg)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/osx/${{ env.artifact_name_dmg }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload env variable for artifacts (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "artifact_name_zip=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-$(git rev-parse --short HEAD).zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "artifact_name_installer=${{ env.DEX_PROJECT_NAME }}-${{ matrix.name }}-installer-$(git rev-parse --short HEAD).exe" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Rename files to desired artifact name
+        shell: bash
+        if: runner.os == 'Windows'
+        run: |
+             mv ./bundled/windows/${{ env.DEX_PROJECT_NAME }}.zip ./bundled/windows/${{ env.artifact_name_zip }}
+             mv ./bundled/windows/${{ env.DEX_PROJECT_NAME }}_installer.exe ./bundled/windows/${{ env.artifact_name_installer }}
+
+      - name: Upload artifacts (Windows zip)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/windows/${{ env.artifact_name_zip }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload artifacts (Windows installer)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          path: ./bundled/windows/${{ env.artifact_name_installer }}
+          archive: false
+          compression-level: 0
+          retention-days: 7
