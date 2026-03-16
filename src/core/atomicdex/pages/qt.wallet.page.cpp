@@ -45,7 +45,7 @@ namespace atomic_dex
 
         const auto now = std::chrono::high_resolution_clock::now();
         const auto s   = std::chrono::duration_cast<std::chrono::seconds>(now - m_update_clock);
-        if (s >= 1s)
+        if (s >= 5s)
         {
             check_send_availability();
             m_update_clock = std::chrono::high_resolution_clock::now();
@@ -59,7 +59,6 @@ namespace atomic_dex
     void
     wallet_page::check_send_availability()
     {
-        // SPDLOG_DEBUG("check_send_availability");
         auto& kdf              = m_system_manager.get_system<kdf_service>();
         auto  global_coins_cfg = m_system_manager.get_system<portfolio_page>().get_global_cfg();
         auto  ticker_info      = global_coins_cfg->get_coin_info(kdf.get_current_ticker());
@@ -114,13 +113,15 @@ namespace atomic_dex
         auto  coin_info  = kdf_system.get_coin_info(ticker.toStdString());
         if (kdf_system.set_current_ticker(ticker.toStdString()) || force)
         {
-            SPDLOG_INFO("new ticker: {}", ticker.toStdString());
+            spdlog::stopwatch sw;
             m_transactions_mdl->reset();
             this->set_tx_fetching_busy(true);
             kdf_system.fetch_infos_thread(true, true);
             emit currentTickerChanged();
             refresh_ticker_infos();
             check_send_availability();
+            using namespace std::chrono;
+            if (sw.elapsed().count() > 0.05) { SPDLOG_DEBUG("Time elapsed in wallet_page::set_current_ticker for ticker {}: {}", ticker.toStdString(), duration_cast<milliseconds>(sw.elapsed())); }
         }
     }
 
@@ -548,7 +549,7 @@ namespace atomic_dex
                 const auto& settings_system     = m_system_manager.get_system<settings_page>();
                 const auto& global_price_system = m_system_manager.get_system<global_price_service>();
                 const auto& current_fiat        = settings_system.get_current_fiat().toStdString();
-                auto            answers        = kdf::basic_batch_answer(resp);
+                auto        answers             = kdf::basic_batch_answer(resp);
 
                 if (answers[0].contains("result"))
                 {
@@ -652,8 +653,8 @@ namespace atomic_dex
                             }
                             catch (const std::exception& error)
                             {
-                                set_withdraw_status(QString::fromStdString(error.what()));
                                 SPDLOG_ERROR("exception caught in zhtlc withdraw_status: {}", error.what());
+                                set_withdraw_status(QString::fromStdString(error.what()));
                             }
                         }
                     }
@@ -675,7 +676,7 @@ namespace atomic_dex
                 }
                 catch (const std::exception& e)
                 {
-                    SPDLOG_ERROR("error caught in send: {}", e.what());
+                    SPDLOG_ERROR("exception caught in send: {}", e.what());
                     auto error_json = QJsonObject({{"error_code", 500}, {"error_message", QString::fromStdString(e.what())}});
                     this->set_rpc_send_data(error_json);
                     this->set_send_busy(false);
@@ -740,7 +741,7 @@ namespace atomic_dex
 
             nlohmann::json json_data = kdf::template_request("withdraw", true);
             kdf::to_json(json_data, withdraw_req);
-            SPDLOG_DEBUG("withdraw request: {}", json_data.dump(4));
+            //SPDLOG_DEBUG("withdraw request: {}", json_data.dump(4));
 
             batch.push_back(json_data);
 
@@ -817,7 +818,7 @@ namespace atomic_dex
                 }
                 catch (const std::exception& e)
                 {
-                    SPDLOG_ERROR("error caught in send: {}", e.what());
+                    SPDLOG_ERROR("exception caught in send: {}", e.what());
                     auto error_json = QJsonObject({{"error_code", 500}, {"error_message", QString::fromStdString(e.what())}});
                     this->set_rpc_send_data(error_json);
                     this->set_send_busy(false);
@@ -912,7 +913,7 @@ namespace atomic_dex
             }
             catch (const std::exception& e)
             {
-                SPDLOG_ERROR("error caught in broadcast finished: {}", e.what());
+                SPDLOG_ERROR("exception caught in broadcast finished: {}", e.what());
                 this->set_rpc_broadcast_data(QString::fromStdString(e.what()));
                 this->set_broadcast_busy(false);
             }
@@ -966,7 +967,7 @@ namespace atomic_dex
             }
             catch (const std::exception& e)
             {
-                SPDLOG_ERROR("error caught in claim_rewards: {}", e.what());
+                SPDLOG_ERROR("exception caught in claim_rewards: {}", e.what());
                 auto error_json = QJsonObject({{"error_code", 500}, {"error_message", QString::fromStdString(e.what())}});
                 this->set_rpc_claiming_data(error_json);
                 this->set_claiming_is_busy(false);
@@ -1154,7 +1155,7 @@ namespace atomic_dex
             auto answer_functor = [this](web::http::http_response resp)
             {
                 std::string body = TO_STD_STR(resp.extract_string(true).get());
-                SPDLOG_DEBUG("resp convertaddress: {}", body);
+                //SPDLOG_DEBUG("resp convertaddress: {}", body);
                 if (resp.status_code() == static_cast<web::http::status_code>(antara::app::http_code::ok))
                 {
                     auto answers        = nlohmann::json::parse(body);

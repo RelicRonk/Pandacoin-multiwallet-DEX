@@ -29,6 +29,7 @@ MultipageModal
     MultipageModalContent
     {
         titleText: qsTr("Transaction Details")
+        flickMax: 720
 
         // Warning for spam/poison transactions
         DexLabel
@@ -55,7 +56,7 @@ MultipageModal
         }
 
         // Transaction Hash
-        TitleText
+        DexLabel
         {
             text: qsTr("Transaction Hash")
             Layout.fillWidth: true

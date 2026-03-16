@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import bignumberjs 1.0
 
@@ -253,6 +253,7 @@ MultipageModal
 
         titleText: qsTr("Prepare to send ") + current_ticker_infos.name
         titleAlignment: Qt.AlignHCenter
+        flickMax: 600
 
         DefaultRectangle
         {
@@ -544,12 +545,13 @@ MultipageModal
                     function onTextEdited()
                     {
                         let inputAmount = new BigNumber(input_amount.text);
-                        if (input_amount.text === "" || inputAmount.isLessThanOrEqualTo(0))
-                            equivalentAmount.value = "0"
-                        else if (_preparePage.cryptoSendMode)
+                        if (input_amount.text === "" || inputAmount.isLessThanOrEqualTo(0)) {
+                            equivalentAmount.value = "0";
+                        } else if (_preparePage.cryptoSendMode) {
                             equivalentAmount.value = inputAmount.multipliedBy(current_ticker_infos.current_currency_ticker_price).toFixed(8);
-                        else
+                        } else {
                             equivalentAmount.value = inputAmount.dividedBy(current_ticker_infos.current_currency_ticker_price).toFixed(8);
+                        }
                     }
 
                     function onTextChanged()
@@ -881,7 +883,7 @@ MultipageModal
         titleAlignment: Qt.AlignHCenter
 
         // Address
-        TitleText
+        DexLabel
         {
             text: qsTr("Recipient's address")
             Layout.fillWidth: true

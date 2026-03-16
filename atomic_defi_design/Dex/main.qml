@@ -41,8 +41,6 @@ DexWindow
         // 3 is minimized, ignore that
         if (visibility !== 3)
             real_visibility = visibility
-
-        API.app.change_state(visibility)
     }
 
     DexWindowControl
@@ -50,7 +48,7 @@ DexWindow
         visible: !isOsx
     }
 
-    DexRectangle
+    DefaultRectangle
     {
         radius: 0
         width: parent.width
@@ -100,11 +98,14 @@ DexWindow
                     }
                 }
 
-                DexMouseArea
+                DefaultMouseArea
                 {
                     id: logout_area
                     hoverEnabled: true
                     anchors.fill: parent
+                    //Component.onCompleted: {
+                    //    console.log("main height = " + height) // 29
+                    //}
                     onClicked:
                     {
                         if (orders.count != 0) app.logout_confirm_modal.open()
@@ -158,7 +159,6 @@ DexWindow
     {
         width: _row.width
         height: 30
-        clip: true
         Behavior on x
         {
             NumberAnimation
@@ -228,7 +228,7 @@ DexWindow
                     }
                 }
 
-                DexMouseArea
+                DefaultMouseArea
                 {
                     id: _area
                     anchors.fill: parent
@@ -276,7 +276,7 @@ DexWindow
                     visible: _label.visible
                     privacy: true
                     anchors.verticalCenter: parent.verticalCenter
-                    DexMouseArea
+                    DefaultMouseArea
                     {
                         anchors.fill: parent
                         onClicked:

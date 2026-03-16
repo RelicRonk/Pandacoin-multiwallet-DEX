@@ -22,19 +22,6 @@
 #include "atomicdex/services/price/global.provider.hpp"
 #include "atomicdex/utilities/global.utilities.hpp"
 
-namespace
-{
-    /*template <typename TValue, typename TModel>
-    void
-    update_value(int role, const TValue& value, const QModelIndex& idx, TModel& model)
-    {
-        if (value != model.data(idx, role))
-        {
-            model.setData(idx, value, role);
-        }
-    }*/
-} // namespace
-
 namespace atomic_dex
 {
     orderbook_model::orderbook_model(kind orderbook_kind, ag::ecs::system_manager& system_mgr, QObject* parent) :
@@ -42,7 +29,6 @@ namespace atomic_dex
         m_model_proxy(new orderbook_proxy_model(system_mgr, this))
     {
         this->m_model_proxy->setSourceModel(this);
-        this->m_model_proxy->setDynamicSortFilter(true);
         this->m_model_proxy->setSortRole(PriceRole);
 
         switch (m_current_orderbook_kind)
@@ -56,8 +42,9 @@ namespace atomic_dex
         case kind::best_orders:
             this->m_model_proxy->setSortRole(CEXRatesRole);
             this->m_model_proxy->setFilterRole(NameAndTicker);
-            this->m_model_proxy->sort(0, Qt::DescendingOrder);
             this->m_model_proxy->setFilterCaseSensitivity(Qt::CaseInsensitive);
+            this->m_model_proxy->setDynamicSortFilter(false);
+            this->m_model_proxy->sort(0, Qt::DescendingOrder);
             break;
         }
     }
@@ -174,7 +161,6 @@ namespace atomic_dex
                 return "0";
             }
             const bool is_buy = trading_pg.get_market_mode() == MarketMode::Buy;
-            // SPDLOG_INFO("cex rates: {}/{} is_buy: {} price: {}", base, rel, is_buy, price);
             t_float_50 price_diff(0);
             t_float_50 cex_price = safe_float(price_service.get_cex_rates(base, rel));
             if (cex_price > 0)
@@ -193,12 +179,6 @@ namespace atomic_dex
                 const auto& data         = m_model_data.at(index.row());
                 const auto& trading_pg   = m_system_mgr.get_system<trading_page>();
                 t_float_50  volume_f     = safe_float(trading_pg.get_volume().toStdString());
-                const bool  is_buy       = trading_pg.get_market_mode() == MarketMode::Buy;
-                const auto  trading_mode = trading_pg.get_current_trading_mode();
-                if (!is_buy && trading_mode == TradingMode::Simple)
-                {
-                    volume_f = safe_float(data.base_max_volume);
-                }
                 t_float_50 total_amount_f = volume_f * safe_float(data.price);
                 const auto total_amount   = atomic_dex::utils::format_float(total_amount_f);
                 return QString::fromStdString(total_amount);
@@ -218,8 +198,6 @@ namespace atomic_dex
                 const auto  coin          = data(index, CoinRole).toString().toStdString();
                 const auto  result        = price_service.get_price_as_currency_from_amount(fiat, coin, total_amount);
                 auto        final_result  = result;
-                // SPDLOG_INFO("Result is: [{}] for coin: {} role: {} total amount: {}", result, coin, PriceFiatRole, total_amount);
-                // qDebug() << "final_result[" << final_result << "]";
                 if (safe_float(result) <= 0)
                 {
                     return "0.00";
@@ -247,6 +225,7 @@ namespace atomic_dex
         {
             return false;
         }
+
         kdf::order_contents& order = m_model_data.at(index.row());
         switch (static_cast<OrderbookRoles>(role))
         {
@@ -326,7 +305,7 @@ namespace atomic_dex
             order.rel_max_volume_numer = value.toString().toStdString();
             break;
         }
-        // emit dataChanged(index, index, {role});
+        emit dataChanged(index, index, {role});
         return true;
     }
 
@@ -362,16 +341,10 @@ namespace atomic_dex
     }
 
     void
-    orderbook_model::reset_orderbook(const t_orders_contents& orderbook, bool is_bestorders)
+    orderbook_model::reset_orderbook(const t_orders_contents& orderbook)
     {
-        // SPDLOG_DEBUG("[orderbook_model::reset_orderbook], is_bestorders: {}", is_bestorders);
-        if (!orderbook.empty())
-        {
-            SPDLOG_INFO(
-                "full orderbook initialization initial size: {} target size: {}, orderbook_kind: {}, is_bestorders: {}",
-                rowCount(), orderbook.size(), m_current_orderbook_kind, is_bestorders
-            );
-        }
+        spdlog::stopwatch sw; using namespace std::chrono;
+
         this->beginResetModel();
         m_model_data = orderbook;
         m_orders_id_registry.clear();
@@ -387,6 +360,24 @@ namespace atomic_dex
         // This assert was causing a crash due to duplicated UUIDs being filtered out for orders that exist for both segwit and non-segwit of a coin,
         // because bestorders response will add duplicate entries (one for each address format) to the response.
         assert(m_model_data.size() == m_orders_id_registry.size());
+
+        if (m_current_orderbook_kind == kind::best_orders)
+        {
+            if ((this->data(this->index(0, 0), CEXRatesRole).toString().toStdString() == "0") && ((this->m_model_proxy->sortRole()) != 269)) {
+                SPDLOG_DEBUG("orderbook_model::reset_orderbook CEXRatesRole is 0, switching to PriceFiatRole");
+                this->m_model_proxy->setSortRole(PriceFiatRole);
+            } else if ((this->data(this->index(0, 0), CEXRatesRole).toString().toStdString() != "0") && ((this->m_model_proxy->sortRole()) != 267)) {
+                SPDLOG_DEBUG("orderbook_model::reset_orderbook current SortRole is {}, setting it to CEXRatesRole", this->m_model_proxy->sortRole());
+                this->m_model_proxy->setSortRole(CEXRatesRole);
+            }
+            if (m_system_mgr.get_system<trading_page>().get_market_mode() == MarketMode::Sell) {
+                this->m_model_proxy->sort(0, Qt::DescendingOrder);
+            } else {
+                this->m_model_proxy->sort(0, Qt::AscendingOrder);
+            }
+        }
+
+        if (sw.elapsed().count() > 0.08) { SPDLOG_DEBUG("Time elapsed in orderbook_model::reset_orderbook: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     int
@@ -404,13 +395,17 @@ namespace atomic_dex
             SPDLOG_WARN("Order with uuid: {} already present...skipping.", order.uuid);
             return;
         }
-        assert(m_model_data.size() == m_orders_id_registry.size());
+
+        if (m_model_data.size() != m_orders_id_registry.size()) { SPDLOG_ERROR("m_model_data.size = {}, m_orders_id_registry.size = {}", m_model_data.size(), m_orders_id_registry.size()); }
+        //assert(m_model_data.size() == m_orders_id_registry.size());
         beginInsertRows(QModelIndex(), m_model_data.size(), m_model_data.size());
         m_model_data.push_back(order);
         this->m_orders_id_registry.emplace(order.uuid);
         endInsertRows();
         emit lengthChanged();
-        assert(m_model_data.size() == m_orders_id_registry.size());
+        if (m_model_data.size() != m_orders_id_registry.size()) { SPDLOG_ERROR("m_model_data.size = {}, m_orders_id_registry.size = {}", m_model_data.size(), m_orders_id_registry.size()); }
+        //assert(m_model_data.size() == m_orders_id_registry.size());
+
         if (m_system_mgr.has_system<trading_page>() && m_current_orderbook_kind == kind::bids)
         {
             auto& trading_pg = m_system_mgr.get_system<trading_page>();
@@ -437,6 +432,8 @@ namespace atomic_dex
     void
     orderbook_model::update_order(const kdf::order_contents& order)
     {
+        spdlog::stopwatch sw;
+        using namespace std::chrono;
         if (const auto res = this->match(index(0, 0), UUIDRole, QString::fromStdString(order.uuid)); not res.isEmpty())
         {
             //! ID Found, update !
@@ -464,32 +461,6 @@ namespace atomic_dex
             update_value(OrderbookRoles::CEXRatesRole, "0.00", idx, *this);
             update_value(OrderbookRoles::SendRole, "0.00", idx, *this);
             update_value(OrderbookRoles::PriceFiatRole, "0.00", idx, *this);
-            emit dataChanged(
-                idx, idx,
-                {OrderbookRoles::UUIDRole,
-                 OrderbookRoles::PriceRole,
-                 OrderbookRoles::PriceNumerRole,
-                 OrderbookRoles::PriceDenomRole,
-                 OrderbookRoles::IsMineRole,
-                 OrderbookRoles::TotalRole,
-                 OrderbookRoles::PercentDepthRole,
-                 OrderbookRoles::BaseMinVolumeRole,
-                 OrderbookRoles::BaseMinVolumeDenomRole,
-                 OrderbookRoles::BaseMinVolumeNumerRole,
-                 OrderbookRoles::BaseMaxVolumeRole,
-                 OrderbookRoles::BaseMaxVolumeDenomRole,
-                 OrderbookRoles::BaseMaxVolumeNumerRole,
-                 OrderbookRoles::RelMinVolumeRole,
-                 OrderbookRoles::RelMinVolumeDenomRole,
-                 OrderbookRoles::RelMinVolumeNumerRole,
-                 OrderbookRoles::RelMaxVolumeRole,
-                 OrderbookRoles::RelMaxVolumeDenomRole,
-                 OrderbookRoles::RelMaxVolumeNumerRole,
-                 OrderbookRoles::MinVolumeRole,
-                 OrderbookRoles::EnoughFundsToPayMinVolume,
-                 OrderbookRoles::CEXRatesRole,
-                 OrderbookRoles::SendRole,
-                 OrderbookRoles::PriceFiatRole});
 
             if (m_system_mgr.has_system<trading_page>() && m_current_orderbook_kind == kind::bids && is_price_changed)
             {
@@ -518,18 +489,18 @@ namespace atomic_dex
                     }
                 }
             }
+            if (sw.elapsed().count() > 0.03) { SPDLOG_DEBUG("Time elapsed in orderbook_model::update_order: {}", duration_cast<milliseconds>(sw.elapsed())); }
         }
     }
 
     void
-    orderbook_model::refresh_orderbook_model_data(const t_orders_contents& orderbook, bool is_bestorders)
+    orderbook_model::refresh_orderbook_model_data(const t_orders_contents& orderbook)
     {
-        SPDLOG_DEBUG("[orderbook_model::refresh_orderbook_model_data], is_bestorders: {}", is_bestorders);
         auto refresh_functor = [this](const std::vector<kdf::order_contents>& contents)
         {
             for (auto&& order: contents)
             {
-                if (this->m_orders_id_registry.find(order.uuid) != this->m_orders_id_registry.end())
+                if (this->m_orders_id_registry.find(order.uuid) != this->m_orders_id_registry.end()) // crash: (__lhs="5763aab7-bfa2-4277-b1ed-0395115c160e-segwit", __rhs=<error reading variable: Cannot access memory at address 0x5550357008c9>)
                 {
                     this->update_order(order);
                 }
@@ -556,10 +527,26 @@ namespace atomic_dex
                     }
                 }
             }
+
             for (auto&& cur_to_remove: to_remove) { m_orders_id_registry.erase(cur_to_remove); }
         };
-
         refresh_functor(orderbook);
+
+        if (m_current_orderbook_kind == kind::best_orders)
+        {
+            if ((this->data(this->index(0, 0), CEXRatesRole).toString().toStdString() == "0") && ((this->m_model_proxy->sortRole()) != 269)) {
+                SPDLOG_DEBUG("orderbook_model::refresh_orderbook_model_data CEXRatesRole is 0, switching to PriceFiatRole");
+                this->m_model_proxy->setSortRole(PriceFiatRole);
+            } else if ((this->data(this->index(0, 0), CEXRatesRole).toString().toStdString() != "0") && ((this->m_model_proxy->sortRole()) != 267)) {
+                SPDLOG_DEBUG("orderbook_model::refresh_orderbook_model_data current SortRole is {} with CEXRatesRole value at (0,0) {}, setting it to CEXRatesRole", this->m_model_proxy->sortRole(), this->data(this->index(0, 0), CEXRatesRole).toString().toStdString());
+                this->m_model_proxy->setSortRole(CEXRatesRole);
+            }
+            if (m_system_mgr.get_system<trading_page>().get_market_mode() == MarketMode::Sell) {
+                this->m_model_proxy->sort(0, Qt::DescendingOrder);
+            } else {
+                this->m_model_proxy->sort(0, Qt::AscendingOrder);
+            }
+        }
     }
 
     t_order_contents
@@ -572,9 +559,9 @@ namespace atomic_dex
     orderbook_model::removeRows(int position, int rows, [[maybe_unused]] const QModelIndex& parent)
     {
         beginRemoveRows(QModelIndex(), position, position + rows - 1);
-        for (int row = 0; row < rows; ++row)
+        for (int i = position + rows - 1; i >= position; --i)
         {
-            auto       it                 = m_model_data.begin() + position;
+            auto       it                 = m_model_data.begin() + i;
             const auto uuid_to_be_removed = it->uuid;
             if (m_system_mgr.has_system<trading_page>() && m_current_orderbook_kind == kind::bids)
             {
@@ -591,25 +578,25 @@ namespace atomic_dex
                     }
                 }
             }
-
             // functor(it);
             m_model_data.erase(it);
-            emit lengthChanged();
         }
         endRemoveRows();
-
+        emit lengthChanged();
         return true;
     }
 
     void
     orderbook_model::clear_orderbook()
     {
-        // SPDLOG_INFO("clear orderbook");
+        spdlog::stopwatch sw;
         this->beginResetModel();
         m_model_data = t_orders_contents{};
         m_orders_id_registry.clear();
         this->endResetModel();
         emit lengthChanged();
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.02) { SPDLOG_DEBUG("Time elapsed in orderbook_model::clear_orderbook: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     orderbook_proxy_model*
@@ -647,10 +634,6 @@ namespace atomic_dex
             out["rel_min_volume"]         = QString::fromStdString(order.rel_min_volume);
             out["rel_max_volume"]         = QString::fromStdString(order.rel_max_volume);
             out["uuid"]                   = QString::fromStdString(order.uuid);
-            if (trading_pg.get_current_trading_mode() == TradingModeGadget::Simple)
-            {
-                out["initial_input_volume"] = trading_pg.get_volume();
-            }
         }
 
         return out;

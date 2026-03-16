@@ -28,32 +28,8 @@ namespace
                                                               cfg.set_timeout(std::chrono::seconds(5));
                                                               return cfg;
                                                           }()};
-    t_http_client_ptr g_openrates_client = std::make_unique<web::http::client::http_client>(FROM_STD_STR("https://defi-stats.komodo.earth"), g_openrates_cfg);
+    t_http_client_ptr g_openrates_client = std::make_unique<web::http::client::http_client>(FROM_STD_STR("https://defistats.gleec.com"), g_openrates_cfg);
     pplx::cancellation_token_source g_token_source;
-
-    pplx::task<web::http::http_response>
-    async_fetch_fiat_rates()
-    {
-        web::http::http_request req;
-        req.set_method(web::http::methods::GET);
-        req.set_request_uri(FROM_STD_STR("api/v3/rates/fixer_io"));
-        //SPDLOG_INFO("req: {}", TO_STD_STR(req.to_string()));
-        return g_openrates_client->request(req, g_token_source.get_token());
-    }
-
-    nlohmann::json
-    process_fetch_fiat_answer(web::http::http_response resp)
-    {
-        nlohmann::json answer;
-        if (resp.status_code() == 200)
-        {
-            answer = nlohmann::json::parse(TO_STD_STR(resp.extract_string(true).get()));
-            return answer;
-        }
-
-        SPDLOG_WARN("unable to fetch last open rates");
-        return answer;
-    }
 } // namespace
 
 namespace
@@ -95,37 +71,9 @@ namespace
 
 namespace atomic_dex
 {
-    void
-    global_price_service::refresh_other_coins_rates(
-        const std::string& quote_id, const std::string& ticker, bool with_update_providers, std::atomic_uint16_t nb_try)
-    {
-        SPDLOG_DEBUG("refresh_other_coins_rates: {} - {} - {} - {}", quote_id, ticker, with_update_providers, nb_try);
-        if (nb_try > 3)
-        {
-            SPDLOG_ERROR("Failed to fetch rates for ticker after 3 tries: {}", ticker);
-            this->m_coin_rate_providers[ticker] = "0.00";
-            return;
-        }
-
-        t_float_50 price = safe_float(get_rate_conversion("USD", ticker, true));
-        if (price <= 0)
-        {
-            SPDLOG_ERROR("Price is 0 for ticker: {}", ticker);
-            this->m_coin_rate_providers[ticker] = "0.00";
-        }
-        else
-        {
-            t_float_50 rate = 1 / price;
-            this->m_coin_rate_providers[ticker] = rate.str();
-        }
-        
-    }
-
     global_price_service::global_price_service(entt::registry& registry, ag::ecs::system_manager& system_manager, atomic_dex::cfg& cfg) :
         system(registry), m_system_manager(system_manager), m_cfg(cfg)
     {
-        m_update_clock = std::chrono::high_resolution_clock::now();
-        this->dispatcher_.sink<force_update_providers>().connect<&global_price_service::on_force_update_providers>(*this);
     }
 } // namespace atomic_dex
 
@@ -134,16 +82,12 @@ namespace atomic_dex
     void
     global_price_service::update()
     {
-        using namespace std::chrono_literals;
+    }
 
-        const auto now = std::chrono::high_resolution_clock::now();
-        const auto s   = std::chrono::duration_cast<std::chrono::seconds>(now - m_update_clock);
-        if (s >= 5min)
-        {
-            SPDLOG_INFO("[global_price_service::update()] - 5min elapsed, updating providers");
-            this->on_force_update_providers({});
-            m_update_clock = std::chrono::high_resolution_clock::now();
-        }
+    void
+    global_price_service::stop()
+    {
+        g_token_source.cancel();
     }
 
     std::string
@@ -207,7 +151,7 @@ namespace atomic_dex
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught in get_rate_conversion: {} - fiat: {} - ticker: {}", error.what(), fiat, ticker);
+            SPDLOG_ERROR("exception in global_price_service::get_rate_conversion for ticker {} fiat {}: {}", ticker, fiat, error.what());
             return "0.00";
         }
         return "0.00";
@@ -242,7 +186,7 @@ namespace atomic_dex
 
                 if (ec)
                 {
-                    // SPDLOG_WARN("error when converting {} to {}, err: {}", current_coin.ticker, fiat, ec.message());
+                    SPDLOG_WARN("error when converting {} to {}, err: {}", current_coin.ticker, fiat, ec.message());
                     ec.clear(); //! Reset
                     continue;
                 }
@@ -264,7 +208,7 @@ namespace atomic_dex
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught: {}", error.what());
+            SPDLOG_ERROR("exception in global_price_service::get_price_in_fiat_all for fiat {}: {}", fiat, error.what());
             return "0.00";
         }
     }
@@ -280,7 +224,6 @@ namespace atomic_dex
             }
 
             auto& kdf_instance = m_system_manager.get_system<kdf_service>();
-
             const auto ticker_infos = kdf_instance.get_coin_info(ticker);
             const auto current_price = get_rate_conversion(currency, ticker);
 
@@ -293,7 +236,7 @@ namespace atomic_dex
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught: {}, ticker: {}, currency: {}, amount: {}", error.what(), ticker, currency, amount);
+            SPDLOG_ERROR("exception in global_price_service::get_price_as_currency_from_amount for ticker {}: {}", ticker, error.what());
             return "0.00";
         }
     }
@@ -303,7 +246,6 @@ namespace atomic_dex
     {
         // Runs often to update fiat values for all enabled coins.
         // fetch ticker infos loop and on_update_portfolio_values_event triggers this.
-        // SPDLOG_INFO("get_price_in_fiat [{}] [{}]", fiat, ticker);
         try
         {
             auto& kdf_instance = m_system_manager.get_system<kdf_service>();
@@ -347,7 +289,7 @@ namespace atomic_dex
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught: {}, ticker: {}, fiat: {}", error.what(), ticker, fiat);
+            SPDLOG_ERROR("exception in global_price_service::get_price_in_fiat for ticker {} fiat {}: {}", ticker, fiat, error.what());
             return "0.00";
         }
     }
@@ -375,67 +317,9 @@ namespace atomic_dex
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught: {}, base: {}, rel: {}", error.what(), base, rel);
+            SPDLOG_ERROR("exception in global_price_service::get_cex_rates for base {} rel {}: {}", base, rel, error.what());
             return "0.00";
         }
-    }
-
-    void
-    global_price_service::on_force_update_providers([[maybe_unused]] const force_update_providers& evt)
-    {
-        static std::atomic_size_t nb_try = 0;
-        nb_try += 1;
-        SPDLOG_INFO("Forcing update providers");
-        auto error_functor = [this, evt](pplx::task<void> previous_task)
-        {
-            try
-            {
-                previous_task.wait();
-            }
-            catch (const std::exception& e)
-            {
-                SPDLOG_ERROR("pplx task error from async_fetch_fiat_rates: {} - nb_try {}", e.what(), nb_try);
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(1s);
-                this->on_force_update_providers(evt);
-            };
-        };
-        async_fetch_fiat_rates()
-            .then(
-                [this](web::http::http_response resp)
-                {
-                    this->m_other_fiats_rates = process_fetch_fiat_answer(resp);
-                    const auto& kdf           = this->m_system_manager.get_system<kdf_service>();
-                    const bool  with_update   = kdf.is_kdf_running();
-                    bool        already_send  = false;
-                    const auto  first_id      = kdf.get_coin_info(g_primary_dex_coin).coinpaprika_id;
-                    const auto  second_id     = kdf.get_coin_info(g_second_primary_dex_coin).coinpaprika_id;
-                    
-                    if (!first_id.empty())
-                    {
-                        refresh_other_coins_rates(first_id, g_primary_dex_coin, false, 0);
-                    }
-                    if (!second_id.empty())
-                    {
-                        refresh_other_coins_rates(second_id, g_second_primary_dex_coin, with_update, 0);
-                        already_send = true;
-                    }
-                    for (auto&& coin: this->m_cfg.possible_currencies)
-                    {
-                        if (g_primary_dex_coin != coin && g_second_primary_dex_coin != coin)
-                        {
-                            refresh_other_coins_rates(
-                                kdf.get_coin_info(coin).coinpaprika_id,
-                                coin,
-                                !already_send,
-                                0
-                            );
-                        }
-                    }
-                    SPDLOG_INFO("Successfully retrieving rate after {} try", nb_try);
-                    nb_try = 0;
-                })
-            .then(error_functor);
     }
 
     std::string
@@ -459,7 +343,7 @@ namespace atomic_dex
         if (fiat == "USD")
             return true;
         auto rates = m_other_fiats_rates.get();
-        // SPDLOG_INFO("rates: {}", rates.dump(4));
+        SPDLOG_INFO("rates: {}", rates.dump(4));
         return !rates.empty() && rates.contains("rates") && rates.at("rates").contains(fiat);
     }
 
@@ -481,8 +365,8 @@ namespace atomic_dex
     global_price_service::is_currency_available(const std::string& currency) const
     {
         bool available = true;
-        // SPDLOG_INFO("coin_rate_providers size: {}", m_coin_rate_providers.size());
         available = m_coin_rate_providers.find(currency) != m_coin_rate_providers.end();
+        SPDLOG_DEBUG("global_price_service::is_currency_available coin_rate_providers size is {}, available: ", m_coin_rate_providers.size(), available);
         return available;
     }
 } // namespace atomic_dex

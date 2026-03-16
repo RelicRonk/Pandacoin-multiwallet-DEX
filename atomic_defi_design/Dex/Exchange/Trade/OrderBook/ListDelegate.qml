@@ -21,11 +21,11 @@ Item
     DefaultTooltip
     {
         visible: mouse_area.containsMouse && (tooltip_text.text_value != "")
-        width: 340
+        width: parent.width
 
         contentItem: RowLayout
         {
-            width: 330
+            width: parent.width
 
             Qaterial.ColorIcon
             {
@@ -110,7 +110,7 @@ Item
         anchors.fill: parent
         hoverEnabled: true
 
-        // Populate form with selected order
+        // Populate buy/sell form with values from selected order
         onClicked:
         {
             if (General.privacy_mode) return
@@ -155,12 +155,16 @@ Item
                 id: depth_bar
                 anchors.top: parent.top
                 height: 2
-                width: 0
+                width: parent.width * depth
                 Behavior on width { NumberAnimation { duration: 1000 } }
                 radius: 3
                 opacity: 0.8
                 color: isAsk ? Dex.CurrentTheme.warningColor : Dex.CurrentTheme.okColor
-                Component.onCompleted: width = ((depth * 100) * (mouse_area.width + 40)) / 100
+                // Component.onCompleted: {
+                    //console.log("parent.width = " + parent.width)
+                    //console.log("depth = " + depth)
+                    //console.log("width = " + width)
+                // }
             }
         }
 
@@ -169,7 +173,7 @@ Item
         {
             id: row
             anchors.fill: parent
-            onWidthChanged: progress.width = ((depth * 100) * (width + 40)) / 100
+            onWidthChanged: depth_bar.width = parent.width * depth
             spacing: 3
 
             // Dot on the left side of the row to indicate own order
@@ -185,7 +189,7 @@ Item
             }
 
             // Price
-            Dex.ElidableText
+            Dex.DexLabel
             {
                 Layout.fillHeight: true
                 Layout.minimumWidth: 100
@@ -200,22 +204,22 @@ Item
             }
 
             // Quantity
-            Dex.ElidableText
+            Dex.DexLabel
             {
                 Layout.fillHeight: true
                 Layout.minimumWidth: 100
                 Layout.alignment: Qt.AlignVCenter
-                text: General.reducedBignum(base_max_volume, 6)
+                text: General.reducedBignum(base_max_volume, 4)
                 font.family: DexTypo.fontFamily
                 font.pixelSize: 12
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
-                onTextChanged: depth_bar.width = ((depth * 100) * (mouse_area.width + 40)) / 100
+                onTextChanged: depth_bar.width = parent.width * depth
                 wrapMode: Text.NoWrap
             }
 
             // Total
-            Dex.ElidableText
+            Dex.DexLabel
             {
                 id: total_text
                 Layout.fillHeight: true

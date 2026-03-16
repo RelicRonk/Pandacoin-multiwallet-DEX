@@ -29,7 +29,6 @@ namespace atomic_dex
         using t_supported_fiat_registry = std::unordered_set<std::string>;
         using t_json_synchronized       = boost::synchronized_value<nlohmann::json>;
         using t_providers_registry      = std::unordered_map<std::string, std::string>;
-        using t_update_time_point       = std::chrono::high_resolution_clock::time_point;
 
         ag::ecs::system_manager&  m_system_manager;
         atomic_dex::cfg&          m_cfg;
@@ -38,10 +37,7 @@ namespace atomic_dex
                                                             "ISK", "BRL", "RON", "NZD", "TRY", "JPY", "RUB", "KRW", "AUD", "HUF", "SEK", "LTC", "DOGE"};
         t_providers_registry      m_coin_rate_providers{};
         t_json_synchronized       m_other_fiats_rates;
-        t_update_time_point       m_update_clock;
         mutable std::shared_mutex m_coin_rate_mutex;
-
-        void refresh_other_coins_rates(const std::string& quote_id, const std::string& ticker, bool with_update_providers = false, std::atomic_uint16_t idx = 0);
 
       public:
         explicit global_price_service(entt::registry& registry, ag::ecs::system_manager& system_manager, atomic_dex::cfg& cfg);
@@ -49,6 +45,7 @@ namespace atomic_dex
 
         //! Public override
         void update()  final;
+        void stop();
 
         //! Public API
         std::string get_price_as_currency_from_tx(const std::string& currency, const std::string& ticker, const tx_infos& tx) const ;
@@ -62,9 +59,6 @@ namespace atomic_dex
 
         bool is_fiat_available(const std::string& fiat) const;
         bool is_currency_available(const std::string& currency) const;
-
-        //! Events
-        void on_force_update_providers([[maybe_unused]] const force_update_providers& evt);
     };
 } // namespace atomic_dex
 

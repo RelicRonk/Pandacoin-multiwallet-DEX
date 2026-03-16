@@ -113,12 +113,10 @@ namespace atomic_dex
             this->invalidate();
             if (m_is_history)
             {
-                SPDLOG_INFO("history mode enabled");
                 qobject_cast<orders_model*>(this->sourceModel())->set_current_page(1);
             }
             else
             {
-                SPDLOG_INFO("order mode enabled");
                 emit qobject_cast<orders_model*>(this->sourceModel())->lengthChanged();
             }
         }
@@ -133,18 +131,16 @@ namespace atomic_dex
             return false;
         }
         auto       data           = this->sourceModel()->data(idx, orders_model::OrdersRoles::OrderStatusRole).toString();
-        const bool is_swap        = this->sourceModel()->data(idx, orders_model::OrdersRoles::IsSwapRole).toBool();
-        const bool is_maker       = this->sourceModel()->data(idx, orders_model::OrdersRoles::IsMakerRole).toBool();
         auto       timestamp      = this->sourceModel()->data(idx, orders_model::OrdersRoles::UnixTimestampRole).toULongLong();
         auto       date           = QDateTime::fromMSecsSinceEpoch(timestamp).date();
-        const bool is_simple_view = m_system_manager.get_system<trading_page>().get_current_trading_mode() == TradingModeGadget::Simple;
 
         if (not this->m_is_history && not date_in_range(date))
         {
             return false;
         }
 
-        assert(not data.isEmpty());
+        //assert(not data.isEmpty());
+        if (data.isEmpty()) { SPDLOG_ERROR("orders_proxy_model::filterAcceptsRow data.isEmpty true"); }
 
         if (this->m_is_history)
         {
@@ -159,11 +155,6 @@ namespace atomic_dex
             {
                 return false;
             }
-        }
-
-        if (!this->m_is_history && is_maker && !is_swap && is_simple_view)
-        {
-            return false;
         }
 
         if (not this->m_is_history && this->filterRole() == orders_model::OrdersRoles::TickerPairRole)
@@ -267,15 +258,14 @@ namespace atomic_dex
     void
     orders_proxy_model::set_coin_filter(const QString& to_filter)
     {
-        SPDLOG_INFO("filter pattern: {}, is_history: {}", to_filter.toStdString(), m_is_history);
         this->setFilterFixedString(to_filter);
         if (this->m_is_history)
         {
             this->set_apply_filtering(true);
         }
-        // else
+        //else
         //{
-        // emit qobject_cast<orders_model*>(this->sourceModel())->lengthChanged();
+        //    emit qobject_cast<orders_model*>(this->sourceModel())->lengthChanged();
         //}
     }
 

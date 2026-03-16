@@ -21,7 +21,6 @@ Item
         width: parent.width
         height: parent.height
         model: isAsk ? API.app.trading_pg.orderbook.asks.proxy_mdl : API.app.trading_pg.orderbook.bids.proxy_mdl
-        clip: true
         reuseItems: true
         spacing: 8
         opacity: API.app.trading_pg.maker_mode ? 0.6 : 1
@@ -35,17 +34,11 @@ Item
             } 
         }
 
-        delegate: Item
+        delegate: ListDelegate
         {
             width: orderbook_list.width
             height: 24
-
-            ListDelegate
-            {
-                width: parent.width
-                height: parent.height
-                isAsk: _control.isAsk ? true : false
-            }
+            isAsk: _control.isAsk ? true : false
         }
 
         Timer
@@ -72,7 +65,7 @@ Item
     }
 
     Connections {
-        target: API.app.trading_pg;
+        target: API.app.trading_pg
 
         function onMarketModeChanged()
         {

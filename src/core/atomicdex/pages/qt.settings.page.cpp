@@ -35,7 +35,6 @@
 #include "atomicdex/pages/qt.settings.page.hpp"
 #include "atomicdex/pages/qt.wallet.page.hpp"
 #include "atomicdex/services/kdf/kdf.service.hpp"
-#include "atomicdex/services/price/coingecko/coingecko.wallet.charts.hpp"
 #include "atomicdex/services/price/global.provider.hpp"
 #include "atomicdex/utilities/global.utilities.hpp"
 #include "atomicdex/utilities/qt.utilities.hpp"
@@ -302,7 +301,6 @@ namespace atomic_dex
             SPDLOG_INFO("change currency {} to {}", m_config.current_currency, current_currency.toStdString());
             atomic_dex::change_currency(m_config, current_currency.toStdString());
 
-            // this->dispatcher_.trigger<force_update_providers>();
             this->dispatcher_.trigger<update_portfolio_values>();
             this->dispatcher_.trigger<current_currency_changed>();
             emit onCurrencyChanged();
@@ -342,7 +340,6 @@ namespace atomic_dex
             {
                 SPDLOG_INFO("change fiat {} to {}", m_config.current_fiat, current_fiat.toStdString());
                 atomic_dex::change_fiat(m_config, current_fiat.toStdString());
-                m_system_manager.get_system<coingecko_wallet_charts_service>().manual_refresh("set_current_fiat");
                 emit onFiatChanged();
             }
         }
@@ -498,7 +495,6 @@ namespace atomic_dex
                     std::string out_address                                         = "0x" + contract_address.toStdString();
                     out["kdf_cfg"]["protocol"]["protocol_data"]["contract_address"] = out_address;
                     out["kdf_cfg"]["coin"]                                          = ticker;
-                    // out["kdf_cfg"]["gui_coin"]                                      = ticker;
                     out["kdf_cfg"]["kdf"] = 1;
                     if (body_json.at("qrc20").contains("decimals"))
                     {
@@ -519,7 +515,6 @@ namespace atomic_dex
                     //!
                     out["adex_cfg"][ticker]                      = nlohmann::json::object();
                     out["adex_cfg"][ticker]["coin"]              = ticker;
-                    out["adex_cfg"][ticker]["gui_coin"]          = ticker;
                     out["adex_cfg"][ticker]["name"]              = body_json.at("qrc20").at("name").get<std::string>();
                     out["adex_cfg"][ticker]["coingecko_id"]      = coingecko_id.toStdString();
                     out["adex_cfg"][ticker]["explorer_url"]      = "https://explorer.qtum.org/";
@@ -568,11 +563,11 @@ namespace atomic_dex
             //         &kdf::g_qtum_proxy_http_client, "/contract/"s + contract_address.toStdString(), "QRC20"s, "QTUM"s, "QRC-20"s, "QTUM"s, "QRC20"s);
             case CoinTypeGadget::ERC20:
                 return std::make_tuple(
-                    &kdf::g_etherscan_proxy_http_client, "/api/v1/token_infos/erc20/"s + contract_address.toStdString(), "ERC20"s, "ETH"s, "ERC-20"s,
+                    &kdf::g_etherscan_proxy_http_client, "/api/v2/token_infos/erc20/"s + contract_address.toStdString(), "ERC20"s, "ETH"s, "ERC-20"s,
                     "ETH"s, "ERC20"s);
             case CoinTypeGadget::BEP20:
                 return std::make_tuple(
-                    &kdf::g_etherscan_proxy_http_client, "/api/v1/token_infos/bep20/"s + contract_address.toStdString(), "BEP20"s, "BNB"s, "BEP-20"s,
+                    &kdf::g_etherscan_proxy_http_client, "/api/v2/token_infos/bep20/"s + contract_address.toStdString(), "BEP20"s, "BNB"s, "BEP-20"s,
                     "BNB"s, "ERC20"s);
             default:
                 return std::make_tuple(&kdf::g_etherscan_proxy_http_client, ""s, ""s, ""s, ""s, ""s, ""s);

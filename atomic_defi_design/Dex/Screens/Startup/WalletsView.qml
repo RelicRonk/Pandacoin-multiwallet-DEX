@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import QtQuick.Window 2.15
 
@@ -107,7 +107,7 @@ SetupPage
 
 
             // Wallets List
-            DexRectangle
+            DefaultRectangle
             {
                 id: wallet_list_bg
 
@@ -143,7 +143,7 @@ SetupPage
                     anchors.fill: parent
                     anchors.margins: 10
                     spacing: 0
-
+                    clip: true
                     model: wallets
 
                     delegate: ClipRRect
@@ -169,7 +169,7 @@ SetupPage
                                 radius: 18
                             }
 
-                            DexMouseArea
+                            DefaultMouseArea
                             {
                                 id: mouse_area
                                 anchors.fill: parent
@@ -228,7 +228,7 @@ SetupPage
                                 color: _deleteArea.containsMouse ? Dex.CurrentTheme.warningColor : Dex.CurrentTheme.foregroundColor
                             }
 
-                            DexMouseArea
+                            DefaultMouseArea
                             {
                                 id: _deleteArea
                                 hoverEnabled: true

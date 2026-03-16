@@ -73,10 +73,10 @@ namespace atomic_dex
             RelMinVolumeRole,
             RelMinVolumeDenomRole,
             RelMinVolumeNumerRole,
-            RelMaxVolumeRole,      // 280
+            RelMaxVolumeRole,       // 280
             RelMaxVolumeDenomRole,
             RelMaxVolumeNumerRole,
-            NameAndTicker          // 283
+            NameAndTicker           // 283
         };
 
         orderbook_model(kind orderbook_kind, ag::ecs::system_manager& system_mgr, QObject* parent = nullptr);
@@ -88,8 +88,8 @@ namespace atomic_dex
         bool                                 setData(const QModelIndex& index, const QVariant& value, int role) final;
         bool                                 removeRows(int row, int count, const QModelIndex& parent) override;
 
-        void                                 reset_orderbook(const t_orders_contents& orderbook, bool is_bestorders=false);
-        void                                 refresh_orderbook_model_data(const t_orders_contents& orderbook, bool is_bestorders=false);
+        void                                 reset_orderbook(const t_orders_contents& orderbook);
+        void                                 refresh_orderbook_model_data(const t_orders_contents& orderbook);
         void                                 clear_orderbook();
         [[nodiscard]] int                    get_length() const;
         [[nodiscard]] orderbook_proxy_model* get_orderbook_proxy() const;

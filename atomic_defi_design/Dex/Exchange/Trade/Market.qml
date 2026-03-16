@@ -17,8 +17,7 @@ import "BestOrder/" as BestOrder
 
 ColumnLayout
 {
-    Layout.minimumWidth: 350
-    Layout.fillWidth: true
+    Layout.preferredWidth: 350
     Layout.fillHeight: true
     Layout.alignment: Qt.AlignTop
     property alias currentIndex: marketTabView.currentIndex
@@ -30,7 +29,7 @@ ColumnLayout
         property int best_orders: 1
 
         background: null
-        Layout.leftMargin: 6
+        Layout.leftMargin: 8
 
         Qaterial.LatoTabButton
         {
@@ -52,33 +51,34 @@ ColumnLayout
 
     Rectangle
     {
+        Layout.preferredWidth: 350
         Layout.fillHeight: true
         color: Dex.CurrentTheme.floatingBackgroundColor
         radius: 10
-        Layout.preferredWidth: 350
 
         Qaterial.SwipeView
         {
             id: marketSwipeView
-            clip: true
             interactive: false
             currentIndex: marketTabView.currentIndex
             anchors.fill: parent
+            clip: true
+
+            OrderBook.Vertical
+            {
+                id: orderBook
+                page_index: currentIndex
+            }
+
+            BestOrder.List
+            {
+                id: bestOrders
+                page_index: currentIndex
+            }
 
             onCurrentIndexChanged:
             {
                 marketSwipeView.currentItem.update();
-            }
-            
-            OrderBook.Vertical
-            {
-                id: orderBook
-            }
-
-            // Best Orders
-            BestOrder.List
-            {
-                id: bestOrders
             }
         }
     }

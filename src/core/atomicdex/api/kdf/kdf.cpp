@@ -162,7 +162,7 @@ namespace
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("Exception caught: {}", error.what());
+            SPDLOG_ERROR("exception in determine_amounts_in_current_currency: {}", error.what());
         }
         return {};
     }
@@ -391,13 +391,12 @@ namespace atomic_dex::kdf
         {
             j["to_timestamp"] = request.to_timestamp.value();
         }
-        // SPDLOG_INFO("Full request: {}", j.dump(4));
+        // SPDLOG_DEBUG("Full request: {}", j.dump(4));
     }
 
     void
     from_json(const nlohmann::json& j, order_swaps_data& contents)
     {
-        // spdlog::stopwatch stopwatch;
         using namespace date;
         using namespace std::chrono;
         using namespace atomic_dex;
@@ -515,13 +514,11 @@ namespace atomic_dex::kdf
             contents.order_error_state   = error.first;
             contents.order_error_message = error.second;
         }
-        // SPDLOG_INFO("from_json(order_swaps_data) -> {} seconds", stopwatch);
     }
 
     void
     from_json(const nlohmann::json& j, my_recent_swaps_answer_success& results)
     {
-        // spdlog::stopwatch                                    stopwatch;
         std::unordered_map<std::string, std::vector<double>> events_time_registry;
         const auto&                                          swaps = j.at("swaps");
         results.swaps.reserve(swaps.size());
@@ -587,7 +584,7 @@ namespace atomic_dex::kdf
             request["mmrpc"] = "2.0";
             request["id"] = 42;
         }
-        // SPDLOG_INFO("template_request: {}", request.dump(4));
+        // SPDLOG_DEBUG("template_request: {}", request.dump(4));
         
         return request;
     }
@@ -596,7 +593,6 @@ namespace atomic_dex::kdf
     rpc_version()
     {
         nlohmann::json json_data = template_request("version");
-        // SPDLOG_DEBUG("version request {}", json_data.dump(4));
         try
         {
             auto                    client = std::make_unique<web::http::client::http_client>(FROM_STD_STR(atomic_dex::g_dex_rpc));
@@ -610,11 +606,11 @@ namespace atomic_dex::kdf
                 nlohmann::json body_json = nlohmann::json::parse(body);
                 return body_json.at("result").get<std::string>();
             }
-
             return "error occured during rpc_version";
         }
         catch (const web::http::http_exception& exception)
         {
+            SPDLOG_ERROR("exception in rpc_version: {}", exception.what());
             return "error occured during rpc_version";
         }
         return "";
@@ -637,11 +633,11 @@ namespace atomic_dex::kdf
                 nlohmann::json body_json = nlohmann::json::parse(body);
                 return body_json.at("result").get<std::string>();
             }
-
             return "error occured during rpc_version";
         }
         catch (const web::http::http_exception& exception)
         {
+            SPDLOG_ERROR("exception in peer_id: {}", exception.what());
             return "error occured during rpc_version";
         }
         return "";
@@ -671,17 +667,21 @@ namespace atomic_dex::kdf
     nlohmann::json
     basic_batch_answer(const web::http::http_response& resp)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         nlohmann::json answer;
-        std::string    body = TO_STD_STR(resp.extract_string(true).get());
+
         try
         {
+            std::string    body = TO_STD_STR(resp.extract_string(true).get()); // TODO deadlock for good
             answer = nlohmann::json::parse(body);
         }
         catch (const nlohmann::detail::parse_error& err)
         {
-            SPDLOG_ERROR("exception caught {}, body: {}", err.what(), body);
-            answer["error"] = body;
+            SPDLOG_ERROR("exception in basic_batch_answer: {}", err.what());
+            answer["error"] = err.what();
         }
+
+        if (sw.elapsed().count() > 0.07) { SPDLOG_DEBUG("Time elapsed in basic_batch_answer: {}", duration_cast<milliseconds>(sw.elapsed())); }
         return answer;
     }
 
@@ -707,35 +707,44 @@ namespace atomic_dex::kdf
     pplx::task<web::http::http_response>
     async_process_rpc_get(t_http_client_ptr& client, const std::string rpc_command, const std::string& url)
     {
-        SPDLOG_INFO("Processing rpc call: {}, url: {}, endpoint: {}", rpc_command, url, TO_STD_STR(client->base_uri().to_string()));
-
-        web::http::http_request req;
-        req.set_method(web::http::methods::GET);
-        if (not url.empty())
+        spdlog::stopwatch sw; using namespace std::chrono;
+        try
         {
-            req.set_request_uri(FROM_STD_STR(url));
+            web::http::http_request req;
+            req.set_method(web::http::methods::GET);
+            if (not url.empty())
+            {
+                req.set_request_uri(FROM_STD_STR(url));
+            }
+            return client->request(req);
         }
-        return client->request(req);
+        catch (const std::exception& error)
+        {
+            SPDLOG_ERROR("exception in async_process_rpc_get: {}", error.what());
+        }
+        if (sw.elapsed().count() > 0.04) { SPDLOG_INFO("Time elapsed in async_process_rpc_get for rpc_command {}, url {}, endpoint {}:", rpc_command, url, TO_STD_STR(client->base_uri().to_string()), duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     template <typename RpcReturnType>
     RpcReturnType
     rpc_process_answer_batch(nlohmann::json& json_answer, const std::string& rpc_command)
     {
+        spdlog::stopwatch sw;
+        using namespace std::chrono;
         RpcReturnType answer;
 
         try
         {
             from_json(json_answer, answer);
             answer.rpc_result_code = 200;
+            if (sw.elapsed().count() > 0.07) { SPDLOG_DEBUG("Time elapsed in rpc_process_answer_batch for rpc_command {}: {}", rpc_command, duration_cast<milliseconds>(sw.elapsed())); }
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR("exception caught for rpc {} answer: {}, exception: {}", rpc_command, json_answer.dump(4), error.what());
             answer.rpc_result_code = -1;
             answer.raw_result      = error.what();
+            SPDLOG_ERROR("rpc_process_answer_batch exception caught for rpc_command {} and answer {}: {}", rpc_command, json_answer.dump(4), error.what());
         }
-
         return answer;
     }
 

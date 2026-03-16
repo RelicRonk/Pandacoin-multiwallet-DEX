@@ -11,8 +11,6 @@ Item
 {
     id: root
 
-    property string         title:                      "Widget"
-
     property bool           collapsable:                true
     property bool           collapsed:                  false
 
@@ -33,8 +31,6 @@ Item
     default property alias  contentData:                content.data
 
     function isCollapsed() { return collapsed }
-
-    clip: true
 
     // Background
     Loader
@@ -114,7 +110,6 @@ Item
 
         RowLayout
         {
-            DexLabel { text: root.title; font: DexTypo.subtitle1 }
             Item { Layout.fillWidth: true }
             Qaterial.Icon
             {

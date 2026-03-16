@@ -2,11 +2,11 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qt.labs.settings 1.0
 import QtQml 2.15
 import QtQuick.Window 2.15
-import QtQuick.Controls.Universal 2.12
+import QtQuick.Controls.Universal 2.15
 
 //! 3rdParty Imports
 import Qaterial 1.0 as Qaterial
@@ -24,10 +24,10 @@ Qaterial.Dialog
     //readonly property bool update_needed: API.app.self_update_service.update_needed
 
     width: 950
-    height: 650
-    padding: 20
-    topPadding: 30
-    bottomPadding: 30
+    height: 720
+    padding: 10
+    topPadding: 20
+    bottomPadding: 20
     anchors.centerIn: parent
     
     dim: true
@@ -39,7 +39,7 @@ Qaterial.Dialog
 
     Overlay.modal: Item
     {
-        DexRectangle
+        DefaultRectangle
         {
             anchors.fill: parent
             color: 'black'
@@ -47,7 +47,7 @@ Qaterial.Dialog
         }
     }
 
-    background: DexRectangle
+    background: DefaultRectangle
     {
         color: DexTheme.backgroundColor
         border.width: 0
@@ -78,7 +78,7 @@ Qaterial.Dialog
             }
         }
 
-        DexFlickable
+        DefaultFlickable
         {
             id: faq_flickable
 
@@ -200,7 +200,7 @@ There is a toggle in settings where you can turn on/off the display of these tra
 
             Item { Layout.preferredWidth: bottom_row.filler_width }
 
-            DexMouseArea
+            DefaultMouseArea
             {
                 id: changelog_button
 
@@ -251,7 +251,7 @@ There is a toggle in settings where you can turn on/off the display of these tra
 
             Item { Layout.preferredWidth: bottom_row.filler_width }
 
-            DexAppButton
+            DefaultButton
             {
                 id: logs_btn
                 width: 200

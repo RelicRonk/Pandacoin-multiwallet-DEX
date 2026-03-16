@@ -35,7 +35,7 @@ namespace ag = antara::gaming;
 
 namespace atomic_dex::kdf
 {
-    inline constexpr const char*                           g_etherscan_proxy_endpoint = "https://etherscan-proxy.komodo.earth/";
+    inline constexpr const char*                           g_etherscan_proxy_endpoint = "https://etherscan.gleec.com/";
     inline std::unique_ptr<web::http::client::http_client> g_etherscan_proxy_http_client{
         std::make_unique<web::http::client::http_client>(FROM_STD_STR(g_etherscan_proxy_endpoint))};
     inline std::unique_ptr<web::http::client::http_client> g_qtum_proxy_http_client{
@@ -227,7 +227,6 @@ namespace atomic_dex::kdf
         int            rpc_result_code;
     };
 
-    // kmd_rewards_info_answer rpc_kmd_rewards_info(std::shared_ptr<t_http_client> kdf_client);
     kmd_rewards_info_answer process_kmd_rewards_answer(nlohmann::json result);
 
     template <typename RpcReturnType>

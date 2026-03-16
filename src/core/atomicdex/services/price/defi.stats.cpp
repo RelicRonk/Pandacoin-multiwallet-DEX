@@ -44,17 +44,24 @@ namespace
         }()
     };
 
-    t_http_client_ptr g_defi_stats_client = std::make_unique<web::http::client::http_client>(FROM_STD_STR("https://defi-stats.komodo.earth/"), g_defi_stats_cfg);
+    t_http_client_ptr g_defi_stats_client = std::make_unique<web::http::client::http_client>(FROM_STD_STR("https://defistats.gleec.com/"), g_defi_stats_cfg);
     pplx::cancellation_token_source d_token_source;
 
     pplx::task<web::http::http_response>
     async_fetch_defi_stats_volumes()
     {
-        web::http::http_request req;
-        req.set_method(web::http::methods::GET);
-        req.set_request_uri(FROM_STD_STR("api/v3/pairs/volumes_24hr"));
-        SPDLOG_INFO("defi_stats req: {}", TO_STD_STR(req.to_string()));
-        return g_defi_stats_client->request(req, d_token_source.get_token());
+        try
+        {
+            web::http::http_request req;
+            req.set_method(web::http::methods::GET);
+            req.set_request_uri(FROM_STD_STR("api/v3/pairs/volumes_24hr"));
+            //SPDLOG_INFO("defi_stats req: {}", TO_STD_STR(req.to_string()));
+            return g_defi_stats_client->request(req, d_token_source.get_token());
+        }
+        catch (const std::exception& error)
+        {
+            SPDLOG_ERROR("exception in async_fetch_defi_stats_volumes: {}", error.what());
+        }
     }
 
     nlohmann::json
@@ -84,9 +91,8 @@ namespace atomic_dex
 
         const auto now = std::chrono::high_resolution_clock::now();
         const auto s   = std::chrono::duration_cast<std::chrono::seconds>(now - m_update_clock);
-        if (s >= 5min)
+        if (s >= 3min)
         {
-            SPDLOG_INFO("[global_defi_stats_service::update()] - 5min elapsed, updating ticker stats");
             process_update();
             m_update_clock = std::chrono::high_resolution_clock::now();
         }
@@ -101,9 +107,6 @@ namespace atomic_dex
     void
     global_defi_stats_service::process_update()
     {
-        static std::atomic_size_t nb_try = 0;
-        nb_try += 1;
-        SPDLOG_INFO("pair volume stats service tick loop");
         auto error_functor = [this](pplx::task<void> previous_task)
         {
             try
@@ -112,10 +115,16 @@ namespace atomic_dex
             }
             catch (const std::exception& e)
             {
-                SPDLOG_ERROR("pplx task error from async_fetch_ticker_stats: {} - nb_try {}", e.what(), nb_try);
-                using namespace std::chrono_literals;
-                std::this_thread::sleep_for(1s);
-                this->process_update();
+                if (std::string(e.what()).find("Error resolving address") != std::string::npos ||
+                    std::string(e.what()).find("Error in SSL handshake") != std::string::npos ||
+                    std::string(e.what()).find("Request canceled by user") != std::string::npos)
+                {
+                    SPDLOG_WARN("exception in global_defi_stats_service::process_update: {}", e.what());
+                }
+                else
+                {
+                    SPDLOG_ERROR("exception in global_defi_stats_service::process_update: {}", e.what());
+                }
             };
         };
         async_fetch_defi_stats_volumes()
@@ -123,7 +132,6 @@ namespace atomic_dex
                 [this](web::http::http_response resp)
                 {
                     this->m_defi_stats_volumes = process_fetch_defi_stats_volumes_answer(resp);
-                    nb_try = 0;
                 })
             .then(error_functor);
     }
@@ -134,12 +142,12 @@ namespace atomic_dex
         std::string volume_24h_usd = "0.00";
         auto ticker = base + "_" + quote;
         auto ticker_reversed = quote + "_" + base;
-        SPDLOG_INFO("Getting 24hr volume data for {}", ticker);
+        //SPDLOG_INFO("Getting 24hr volume data for {}", ticker);
 
         // Check if base/quote are the same
         if (base == quote)
         {
-            SPDLOG_INFO("Base/quote must be different, no volume data for {}", ticker);
+            SPDLOG_WARN("Base/quote must be different, no volume data for {}", ticker);
             return volume_24h_usd;
         }
 
@@ -165,7 +173,7 @@ namespace atomic_dex
             if (volume_node.is_number())
             {
                 volume_24h_usd = std::to_string(volume_node.get<double>());
-                SPDLOG_INFO("{} volume usd: {}", ticker, volume_24h_usd);
+                //SPDLOG_INFO("{} volume usd: {}", ticker, volume_24h_usd);
             }
             else if (volume_node.is_null()) 
             {
@@ -182,7 +190,7 @@ namespace atomic_dex
             if (volume_node.is_number())
             {
                 volume_24h_usd = std::to_string(volume_node.get<double>());
-                SPDLOG_INFO("{} volume usd: {}", ticker_reversed, volume_24h_usd);
+                //SPDLOG_INFO("{} volume usd: {}", ticker_reversed, volume_24h_usd);
             }
             else if (volume_node.is_null()) 
             {
@@ -195,7 +203,7 @@ namespace atomic_dex
         }
         else
         {
-            SPDLOG_WARN("No volume data available for {}", ticker);
+            //SPDLOG_INFO("No volume data available for {}", ticker);
         }
         return volume_24h_usd;
     }
@@ -206,7 +214,7 @@ namespace atomic_dex
         std::string trades_24h = "0";
         auto ticker = base + "_" + quote;
         auto ticker_reversed = quote + "_" + base;
-        SPDLOG_INFO("Getting 24hr trade data for {}", ticker);
+        //SPDLOG_INFO("Getting 24hr trade data for {}", ticker);
 
         // Check if base/quote are the same
         if (base == quote)
@@ -237,7 +245,7 @@ namespace atomic_dex
             if (trades_node.is_number())
             {
                 trades_24h = std::to_string(trades_node.get<int>());
-                SPDLOG_INFO("{} trades_24h: {}", ticker, trades_24h);
+                //SPDLOG_INFO("{} trades_24h: {}", ticker, trades_24h);
             }
             else if (trades_node.is_null()) 
             {
@@ -254,7 +262,7 @@ namespace atomic_dex
             if (trades_node.is_number())
             {
                 trades_24h = std::to_string(trades_node.get<int>());
-                SPDLOG_INFO("{} trades_24h: {}", ticker_reversed, trades_24h);
+                //SPDLOG_INFO("{} trades_24h: {}", ticker_reversed, trades_24h);
             }
             else if (trades_node.is_null()) 
             {
@@ -267,7 +275,7 @@ namespace atomic_dex
         }
         else
         {
-            SPDLOG_WARN("No trades data available for {}", ticker);
+            //SPDLOG_WARN("No trades data available for {}", ticker);
         }
         return trades_24h;
     }

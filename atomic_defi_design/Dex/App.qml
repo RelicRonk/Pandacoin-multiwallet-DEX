@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qt.labs.settings 1.0
 import Qt.labs.platform 1.1
 
@@ -16,7 +16,7 @@ import Dex.Themes 1.0 as Dex
 import "Screens/Startup"
 as Startup
 
-DexRectangle
+DefaultRectangle
 {
     id: app
 
@@ -67,14 +67,6 @@ DexRectangle
         onActivated: window.showNormal()
     }
 
-    Component
-    {
-        id: no_connection
-
-        NoConnection
-        {}
-    }
-
     NotificationsModal
     {
         id: notifications_modal
@@ -122,9 +114,6 @@ DexRectangle
         anchors.fill: parent
         sourceComponent:
         {
-            if (!API.app.internet_checker.internet_reacheable)
-                return no_connection
-
             return _availablePages[_currentPage]
         }
     }
@@ -156,19 +145,6 @@ DexRectangle
     ToastManager
     {
         id: toast
-    }
-
-    // Update Modal
-    NewUpdateModal
-    {
-        id: newUpdateModal
-        visible: false
-    }
-
-    UpdateInvalidChecksum
-    {
-        id: update_invalid_checksum
-        visible: false
     }
 
     // Fatal Error Modal
@@ -372,7 +348,7 @@ DexRectangle
                     }
                 }
             }
-            DexMouseArea
+            DefaultMouseArea
             {
                 id: areaAlert
                 hoverEnabled: true

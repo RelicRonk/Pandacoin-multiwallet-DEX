@@ -834,17 +834,6 @@
     </message>
 </context>
 <context>
-    <name>DefaultRangeSlider</name>
-    <message>
-        <location filename="../../Dex/Components/DefaultRangeSlider.qml" line="107"/>
-        <source>Min</source>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DefaultRangeSlider.qml" line="115"/>
-        <source>Max</source>
-    </message>
-</context>
-<context>
     <name>DefaultTextEdit</name>
     <message>
         <location filename="../../Dex/Components/DefaultTextEdit.qml" line="12"/>
@@ -922,21 +911,6 @@
     <message>
         <location filename="../../Dex/Components/DexPaginator.qml" line="97"/>
         <source>items per page</source>
-    </message>
-</context>
-<context>
-    <name>DexRangeSlider</name>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="109"/>
-        <source>Min</source>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="116"/>
-        <source>Half</source>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="123"/>
-        <source>Max</source>
     </message>
 </context>
 <context>
@@ -1670,59 +1644,6 @@ They will be removed from the orderbook until you log in again.</source>
     </message>
 </context>
 <context>
-    <name>NewUpdateModal</name>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="37"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="66"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="125"/>
-        <source>Searching new updates</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="44"/>
-        <source>Fetching...</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="58"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="80"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="117"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="139"/>
-        <source>Close</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="72"/>
-        <source>Could not check new updates for the following reason: 
-%1</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="88"/>
-        <source>New version found</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="88"/>
-        <source>Mandatory version found</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="95"/>
-        <source>%1 %2 is available !</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="102"/>
-        <source>This update is mandatory to continue using the application</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="117"/>
-        <source>Close Dex</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="131"/>
-        <source>Your application is updated.</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="111"/>
-        <source>Download</source>
-    </message>
-</context>
-<context>
     <name>NewWallet</name>
     <message>
         <location filename="../../Dex/Screens/Startup/NewWallet.qml" line="73"/>
@@ -1811,25 +1732,6 @@ They will be removed from the orderbook until you log in again.</source>
     <message>
         <location filename="../../Dex/Screens/Startup/NewWallet.qml" line="729"/>
         <source>Continue</source>
-    </message>
-</context>
-<context>
-    <name>NoConnection</name>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="19"/>
-        <source>No connection</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="25"/>
-        <source>Please make sure you are connected to the internet</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="31"/>
-        <source>Will automatically retry in %1 seconds</source>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="40"/>
-        <source>Retry</source>
     </message>
 </context>
 <context>
@@ -2354,13 +2256,6 @@ Please select a new order.</source>
     </message>
 </context>
 <context>
-    <name>QObject</name>
-    <message>
-        <location filename="../../../src/core/atomicdex/services/update/update.checker.service.cpp" line="48"/>
-        <source>Cannot reach the endpoint: </source>
-    </message>
-</context>
-<context>
     <name>ReceiveModal</name>
     <message>
         <location filename="../../Dex/Wallet/ReceiveModal.qml" line="19"/>
@@ -2747,10 +2642,6 @@ Please select a new order.</source>
     <message>
         <location filename="../../Dex/Settings/SettingModal.qml" line="219"/>
         <source>Enable Desktop Notifications</source>
-    </message>
-    <message>
-        <location filename="../../Dex/Settings/SettingModal.qml" line="242"/>
-        <source>Maximum number of enabled coins</source>
     </message>
     <message>
         <location filename="../../Dex/Settings/SettingModal.qml" line="269"/>
@@ -3535,13 +3426,6 @@ Network fees can vary greatly depending on your selected trading pair.</source>
     <message>
         <location filename="../../Dex/Wallet/Transactions.qml" line="128"/>
         <source>Unconfirmed</source>
-    </message>
-</context>
-<context>
-    <name>UpdateInvalidChecksum</name>
-    <message>
-        <location filename="../../Dex/Dashboard/UpdateInvalidChecksum.qml" line="7"/>
-        <source>The downloaded update archive is corrupted !</source>
     </message>
 </context>
 <context>

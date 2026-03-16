@@ -46,31 +46,30 @@ namespace atomic_dex
       public:
         enum PortfolioRoles
         {
-            TickerRole = Qt::UserRole + 1,
-            GuiTickerRole,
+            TickerRole = Qt::UserRole + 1, // 257
             NameRole,
             BalanceRole,
-            MainCurrencyBalanceRole,
+            MainCurrencyBalanceRole,       // 260
             Change24H,
             MainCurrencyPriceForOneUnit,
             MainFiatPriceForOneUnit,
             Trend7D,
-            ActivationStatus,
+            ActivationStatus,              // 265
             Excluded,
             Display,
             NameAndTicker,
             MultiTickerCurrentlyEnabled, ///< If set to true multi ticker is enabled
-            MultiTickerData,             ///< Multi ticker data for the confirm model
+            MultiTickerData,             ///< Multi ticker data for the confirm model // 270
             MultiTickerError,            ///< In case of error code will be stored
             MultiTickerPrice,            ///< The price field of multi ticker
             MultiTickerReceiveAmount,    ///< The total receive amount (it's readonly from front-end)
             MultiTickerFeesInfo,         ///< the fees json infos (it's readonly from front-end)
-            CoinType,                    ///< Type of the coin
+            CoinType,                    ///< Type of the coin // 275
             Address,                     ///< Public address
             PrivKey,                     ///< Priv key
             PercentMainCurrency,
             LastPriceTimestamp,
-            PriceProvider
+            PriceProvider                 // 280
         };
         Q_ENUM(PortfolioRoles)
 
@@ -90,14 +89,12 @@ namespace atomic_dex
         bool                                 setData(const QModelIndex& index, const QVariant& value, int role) final; //< Will be used internally
         [[nodiscard]] int                    rowCount(const QModelIndex& parent) const final;
         [[nodiscard]] QHash<int, QByteArray> roleNames() const final;
-        bool                                 removeRows(int row, int count, const QModelIndex& parent) final;
 
         //! QML API
         Q_INVOKABLE void clean_priv_keys();
 
         //! Public api
         void                                  initialize_portfolio(const std::vector<std::string>& tickers);
-        bool                                  update_activation_status();
         bool                                  update_currency_values();
         bool                                  update_balance_values(const std::vector<std::string>& tickers);
         void                                  adjust_percent_current_currency(QString balance_all);

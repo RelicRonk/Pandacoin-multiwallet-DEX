@@ -14,15 +14,19 @@ import Dex.Components 1.0 as Dex
 Widget
 {
     id: _control
-    title: qsTr("Best Orders for %1").arg(left_ticker)
-
-    margins: 10
-    spacing: 10
+    property int page_index: 0
+    margins: 8
+    spacing: 8
     collapsable: false
+    visible: _control.page_index === 1
+    enabled: visible
 
     Header
     {
         visible: !warning_text.visible
+        Layout.topMargin: 6
+        Layout.bottomMargin: 6
+        Layout.fillWidth: true
     }
 
     Item
@@ -49,14 +53,16 @@ Widget
         id: _listView
         Layout.fillWidth: true
         Layout.fillHeight: true
+        Layout.bottomMargin: 6
         visible: !warning_text.visible
         spacing: 6
-
         model: API.app.trading_pg.orderbook.best_orders.proxy_mdl
-
-        clip: true
         reuseItems: true
         scrollbar_visible: false
+
+        Component.onCompleted: {
+            positionViewAtBeginning()
+        }
 
         delegate: ListDelegate
         {

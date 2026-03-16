@@ -2,27 +2,24 @@
   "name": "komodo-wallet-desktop",
   "version-string": "0.8.3",
   "dependencies": [
-    "entt",
     "boost-multiprecision",
-    "boost-filesystem",
     "boost-thread",
     "boost-random",
     "boost-lockfree",
-    "boost-stacktrace",
-    "doctest",
-    "fmt",
+    "openssl",
     "nlohmann-json",
     "range-v3",
     "libsodium",
+    "fmt",
     "spdlog",
     {
       "name": "spdlog",
       "features": [
-        "wchar",
-        "wchar-filenames"
+        "wchar"
       ],
       "platform": "windows"
     },
+    "date",
     {
       "name": "date",
       "features": [
@@ -30,8 +27,20 @@
       ],
       "platform": "windows"
     },
-    "date",
+    "asyncplusplus",
+    "asio",
     "cpprestsdk",
-    "taskflow"
+    "entt",
+    "refl-cpp",
+    "strong-type",
+    "tl-expected"
+  ],
+  "builtin-baseline": "ffc071e0c08432c60c9b64f00334c0227667931b",
+  "overrides": [
+    {
+      "name": "entt",
+      "version": "3.9.0",
+      "port-version": 0
+    }
   ]
 }

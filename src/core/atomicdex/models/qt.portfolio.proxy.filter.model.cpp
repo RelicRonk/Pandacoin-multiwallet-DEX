@@ -37,7 +37,6 @@ namespace atomic_dex
         switch (static_cast<atomic_dex::portfolio_model::PortfolioRoles>(role))
         {
         case atomic_dex::portfolio_model::TickerRole:
-        case atomic_dex::portfolio_model::GuiTickerRole:
             return left_data.toString() > right_data.toString();
         case atomic_dex::portfolio_model::NameRole:
             return left_data.toString().toLower() < right_data.toString().toLower();
@@ -134,6 +133,7 @@ namespace atomic_dex
     void
     portfolio_proxy_model::reset()
     {
+        SPDLOG_DEBUG("UNUSED ??");
         this->beginResetModel();
         this->endResetModel();
     }
@@ -165,8 +165,11 @@ namespace atomic_dex
     void
     portfolio_proxy_model::sort_by_currency_balance(bool is_ascending)
     {
+        spdlog::stopwatch sw;
         this->setSortRole(atomic_dex::portfolio_model::MainCurrencyBalanceRole);
         this->sort(0, is_ascending ? Qt::AscendingOrder : Qt::DescendingOrder);
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.03) { SPDLOG_DEBUG("Time elapsed in portfolio_proxy_model::sort_by_currency_balance: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void

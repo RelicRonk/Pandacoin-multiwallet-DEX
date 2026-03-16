@@ -32,8 +32,6 @@
 #include "atomicdex/api/kdf/rpc_v2/rpc2.enable_tendermint_with_assets.hpp"
 #include "atomicdex/api/kdf/rpc_v2/rpc2.enable_erc20.hpp"
 #include "atomicdex/api/kdf/rpc_v2/rpc2.enable_eth_with_tokens.hpp"
-#include "atomicdex/api/kdf/rpc_v2/rpc2.enable_slp_rpc.hpp"
-#include "atomicdex/api/kdf/rpc_v2/rpc2.enable_bch_with_tokens_rpc.hpp"
 
 namespace
 {
@@ -42,12 +40,9 @@ namespace
 
     t_http_client generate_client()
     {
-        using namespace std::chrono_literals;
-        
-        //constexpr auto                          client_timeout = 30s;
+        //using namespace std::chrono_literals;
+        //cfg.set_timeout(std::chrono::seconds(40));
         web::http::client::http_client_config   cfg;
-
-        //cfg.set_timeout(client_timeout);
         return {FROM_STD_STR(atomic_dex::g_dex_rpc), cfg};
     }
 
@@ -79,18 +74,15 @@ namespace
     Rpc process_rpc_answer(const web::http::http_response& answer)
     {
         std::string body = TO_STD_STR(answer.extract_string(true).get());
-        // SPDLOG_INFO("body: {}", body);
         nlohmann::json json_answer;
         Rpc rpc;
         try
         {
             json_answer = nlohmann::json::parse(body);
-            // SPDLOG_DEBUG("json_answer: {}", json_answer.dump(4));
         }
         catch (const nlohmann::json::parse_error& error)
         {
-            SPDLOG_ERROR("rpc answer error: {}", error.what());
-            // SPDLOG_DEBUG("body: {}", body);
+            SPDLOG_ERROR("exception in process_rpc_answer: {}", error.what());
         }
 
         if (Rpc::is_v2)
@@ -102,7 +94,6 @@ namespace
             }
             else
             {
-                SPDLOG_DEBUG("rpc2 answer: error");
                 rpc.error = json_answer.get<typename Rpc::expected_error_type>();
                 rpc.raw_result = json_answer.dump();
             }
@@ -120,21 +111,23 @@ namespace atomic_dex::kdf
     template <typename RpcReturnType>
     RpcReturnType kdf_client::rpc_process_answer(const web::http::http_response& resp, const std::string& rpc_command)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         std::string body = TO_STD_STR(resp.extract_string(true).get());
-        SPDLOG_INFO("resp code for rpc_command {} is {}", rpc_command, resp.status_code());
         RpcReturnType answer;
 
         try
         {
             if (resp.status_code() not_eq 200)
             {
-                SPDLOG_WARN("rpc answer code is not 200, body : {}", body);
                 if constexpr (doom::meta::is_detected_v<have_error_field, RpcReturnType>)
                 {
-                    SPDLOG_DEBUG("error field detected inside the RpcReturnType");
+                    // SPDLOG_DEBUG("kdf_client::rpc_process_answer: error field detected inside the RpcReturnType of rpc_command {} with resp.status_code {}: {}", rpc_command, resp.status_code(), body);
+                    // kdf_client::rpc_process_answer: error field detected inside the RpcReturnType of rpc_command tx_history with resp.status_code 404: Not Found
+                    // kdf_client::rpc_process_answer: error field detected inside the RpcReturnType of rpc_command tx_history with resp.status_code 500:
                     if constexpr (std::is_same_v<std::optional<std::string>, decltype(answer.error)>)
                     {
-                        SPDLOG_DEBUG("The error field type is string, parsing it from the response body");
+                        // SPDLOG_DEBUG("kdf_client::rpc_process_answer before trying parse(body) on body {}", body);
+                        // kdf_client::rpc_process_answer before trying parse(body) on body  // aka empty
                         if (auto json_data = nlohmann::json::parse(body); json_data.at("error").is_string())
                         {
                             answer.error = json_data.at("error").get<std::string>();
@@ -143,7 +136,6 @@ namespace atomic_dex::kdf
                         {
                             answer.error = body;
                         }
-                        SPDLOG_DEBUG("The error after getting extracted is: {}", answer.error.value());
                     }
                 }
                 answer.rpc_result_code = resp.status_code();
@@ -151,20 +143,20 @@ namespace atomic_dex::kdf
                 return answer;
             }
 
-
             assert(not body.empty());
             auto json_answer       = nlohmann::json::parse(body);
             answer.rpc_result_code = resp.status_code();
             answer.raw_result      = body;
             from_json(json_answer, answer);
+            if (sw.elapsed().count() > 0.06) { SPDLOG_DEBUG("Time elapsed in kdf_client::rpc_process_answer for rpc_command {}: {}", rpc_command, duration_cast<milliseconds>(sw.elapsed())); }
         }
         catch (const std::exception& error)
         {
-            SPDLOG_ERROR(
-                "{} l{} f[{}], exception caught {} for rpc {}, body: {}", __FUNCTION__, __LINE__, std::filesystem::path(__FILE__).filename().string(), error.what(),
-                rpc_command, body);
             answer.rpc_result_code = -1;
             answer.raw_result      = error.what();
+            SPDLOG_ERROR("exception in kdf_client::rpc_process_answer for rpc_command {} with body {} and answer.raw_result: {}", rpc_command, body, answer.raw_result);
+            // exception in kdf_client::rpc_process_answer for rpc_command tx_history with body Not Found and answer.raw_result: [json.exception.parse_error.101] parse error at line 1, column 1: syntax error while parsing value - invalid literal; last read: 'N'
+            // exception in kdf_client::rpc_process_answer for rpc_command tx_history with body  and answer.raw_result: [json.exception.parse_error.101] parse error at line 1, column 1: attempting to parse an empty input; check that your input string or stream contains the expected JSON
         }
 
         return answer;
@@ -173,11 +165,20 @@ namespace atomic_dex::kdf
     pplx::task<web::http::http_response>
     kdf_client::async_rpc_batch_standalone(nlohmann::json batch_array)
     {
-        web::http::http_request request;
-        request.set_method(web::http::methods::POST);
-        request.set_body(batch_array.dump());
-        auto resp = generate_client().request(request, m_token_source.get_token());
-        return resp;
+        spdlog::stopwatch sw; using namespace std::chrono;
+        try
+        {
+            web::http::http_request request;
+            request.set_method(web::http::methods::POST);
+            request.set_body(batch_array.dump());
+            auto resp = generate_client().request(request, m_token_source.get_token());
+            return resp;
+        }
+        catch (const std::exception& error)
+        {
+            SPDLOG_ERROR("exception in kdf_client::async_rpc_batch_standalone: {}", error.what());
+        }
+        if (sw.elapsed().count() > 0.03) { SPDLOG_DEBUG("Time elapsed in kdf_client::async_rpc_batch_standalone for coin {} and method {}: {}", batch_array[0].at("coin").get<std::string>(), batch_array[0].at("method").get<std::string>(), duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     template <rpc Rpc>
@@ -187,16 +188,13 @@ namespace atomic_dex::kdf
         process_rpc_async(request_type{}, on_rpc_processed);
     }
 
-    // template void kdf_client::process_rpc_async<my_balance_rpc>(const std::function<void(orderbook_rpc)>&);
     template void kdf_client::process_rpc_async<orderbook_rpc>(const std::function<void(orderbook_rpc)>&);
     template void kdf_client::process_rpc_async<bestorders_rpc>(const std::function<void(bestorders_rpc)>&);
-    template void kdf_client::process_rpc_async<enable_slp_rpc>(const std::function<void(enable_slp_rpc)>&);
     template void kdf_client::process_rpc_async<enable_erc20_rpc>(const std::function<void(enable_erc20_rpc)>&);
     template void kdf_client::process_rpc_async<get_public_key_rpc>(const std::function<void(get_public_key_rpc)>&);
     template void kdf_client::process_rpc_async<my_tx_history_v1_rpc>(const std::function<void(my_tx_history_v1_rpc)>&);
     template void kdf_client::process_rpc_async<my_tx_history_v2_rpc>(const std::function<void(my_tx_history_v2_rpc)>&);
     template void kdf_client::process_rpc_async<enable_eth_with_tokens_rpc>(const std::function<void(enable_eth_with_tokens_rpc)>&);
-    template void kdf_client::process_rpc_async<enable_bch_with_tokens_rpc>(const std::function<void(enable_bch_with_tokens_rpc)>&);
     template void kdf_client::process_rpc_async<enable_tendermint_token_rpc>(const std::function<void(enable_tendermint_token_rpc)>&);
     template void kdf_client::process_rpc_async<enable_tendermint_with_assets_rpc>(const std::function<void(enable_tendermint_with_assets_rpc)>&);
     
@@ -210,14 +208,17 @@ namespace atomic_dex::kdf
             {
                 try
                 {
+                    spdlog::stopwatch sw; using namespace std::chrono;
                     auto rpc = process_rpc_answer<Rpc>(resp);
                     rpc.request = request;
                     on_rpc_processed(rpc);
+                    nlohmann::json json_data;
+                    nlohmann::to_json(json_data, request);
+                    if (sw.elapsed().count() > 0.07) { SPDLOG_DEBUG("Time elapsed in kdf_client::process_rpc_async for request {}: {}", json_data.dump(), duration_cast<milliseconds>(sw.elapsed())); }
                 }
                 catch (const std::exception& ex)
                 {
-                    // SPDLOG_DEBUG("process_rpc_answer rpc.result: {}", rpc.raw_result);
-                    SPDLOG_ERROR(ex.what());
+                    SPDLOG_ERROR("exception in kdf_client::process_rpc_async: {}", ex.what());
                 }
             });
     }
@@ -232,15 +233,13 @@ namespace atomic_dex::kdf
     TAnswer
     kdf_client::process_rpc(TRequest&& request, std::string rpc_command, bool is_v2)
     {
-        SPDLOG_DEBUG("Processing rpc call: {}", rpc_command);
-
         nlohmann::json json_data = kdf::template_request(rpc_command, is_v2);
-
         kdf::to_json(json_data, request);
 
         auto json_copy        = json_data;
         json_copy["userpass"] = "*******";
-        SPDLOG_DEBUG("request: {}", json_copy.dump());
+
+        SPDLOG_DEBUG("UNUSED ?? request: {}", json_copy.dump());
 
         web::http::http_request rpc_request(web::http::methods::POST);
         rpc_request.headers().set_content_type(FROM_STD_STR("application/json"));

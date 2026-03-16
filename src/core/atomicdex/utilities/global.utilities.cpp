@@ -211,6 +211,7 @@ namespace atomic_dex::utils
             }
             catch (const std::invalid_argument& e)
             {
+                SPDLOG_ERROR("exception in to_eth_checksum: {}", e.what());
                 final_eth_address += address[i];
             }
         }
@@ -323,9 +324,9 @@ namespace atomic_dex::utils
 
     void json_keys(nlohmann::json j)
     {
-        for (auto& [key, val] : j.items())
+        for ([[maybe_unused]] auto& [key, val] : j.items())
         {
-            SPDLOG_DEBUG("key: {}, value: {}", key, val);
+            SPDLOG_DEBUG("UNUSED ??");
         }
     }
 } // namespace atomic_dex::utils

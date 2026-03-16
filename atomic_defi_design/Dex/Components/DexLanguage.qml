@@ -4,13 +4,13 @@ import QtQuick.Controls 2.15
 import QtQuick.Controls.impl 2.15
 import QtQuick.Controls.Universal 2.15
 
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import "../Constants"
 import App 1.0
 import Dex.Themes 1.0 as Dex
 
-DexComboBox
+DefaultComboBox
 {
     id: control
     model: API.app.settings_pg.get_available_langs()
@@ -32,7 +32,7 @@ DexComboBox
             anchors.fill: parent
             spacing: -25
 
-            DexImage
+            DefaultImage
             {
                 id: image
                 Layout.preferredHeight: 25
@@ -69,7 +69,7 @@ DexComboBox
         rightPadding: control.indicator.width + control.spacing
         verticalAlignment: Text.AlignVCenter
 
-        DexImage
+        DefaultImage
         {
             id: image
             height: 25
@@ -85,7 +85,7 @@ DexComboBox
         color: Dex.CurrentTheme.comboBoxBackgroundColor
     }
 
-    DexMouseArea
+    DefaultMouseArea
     {
         anchors.fill: parent
         acceptedButtons: Qt.NoButton

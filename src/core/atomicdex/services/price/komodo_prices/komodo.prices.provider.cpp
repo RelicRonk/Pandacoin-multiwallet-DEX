@@ -11,7 +11,6 @@ namespace atomic_dex
 {
     komodo_prices_provider::komodo_prices_provider(entt::registry& registry) : system(registry)
     {
-        // SPDLOG_INFO("komodo_prices_provider created");
         m_clock = std::chrono::high_resolution_clock::now();
         process_update();
     }
@@ -24,7 +23,6 @@ namespace atomic_dex
     komodo_prices_provider::get_info_answer(const std::string& ticker) const
     {
         std::shared_lock lock(m_market_mutex);
-        // SPDLOG_INFO("Looking for ticker: {}", ticker);
         const auto it = m_market_registry.find(ticker);
         return it != m_market_registry.cend() ? it->second : komodo_prices::api::komodo_ticker_infos{.ticker = ticker};
     }
@@ -32,7 +30,6 @@ namespace atomic_dex
     void
     komodo_prices_provider::process_update(bool fallback)
     {
-        // SPDLOG_INFO("komodo price service tick loop");
         auto answer_functor = [this, fallback](web::http::http_response resp)
         {
             std::string body = TO_STD_STR(resp.extract_string(true).get());
@@ -44,12 +41,11 @@ namespace atomic_dex
                 {
                     std::unique_lock lock(m_market_mutex);
                     m_market_registry = std::move(answer);
-                    // SPDLOG_INFO("komodo price registry size: {}", m_market_registry.size());
                 }
             }
             else
             {
-                SPDLOG_ERROR("Error during the rpc call to komodo price provider: {}", body);
+                SPDLOG_ERROR("resp.status_code is {} in komodo_prices_provider::process_update and body: {}", resp.status_code(), body);
                 if (!fallback)
                 {
                     process_update(true);
@@ -66,12 +62,22 @@ namespace atomic_dex
             }
             catch (const std::exception& e)
             {
-                dispatcher_.trigger<fiat_rate_updated>("");
-                SPDLOG_ERROR("error occured when fetching price: {}", e.what());
+                if (std::string(e.what()).find("Error resolving address") != std::string::npos ||
+                    std::string(e.what()).find("Failed to connect to any resolved endpoint") != std::string::npos ||
+                    std::string(e.what()).find("Request canceled by user") != std::string::npos)
+                {
+                    SPDLOG_WARN("exception in komodo_prices_provider::process_update: {}", e.what());
+                }
+                else
+                {
+                    SPDLOG_ERROR("exception in komodo_prices_provider::process_update: {}", e.what());
+                }
+
                 if (!fallback)
                 {
                     process_update(true);
                 }
+                dispatcher_.trigger<fiat_rate_updated>("");
             };
         };
 
@@ -90,7 +96,7 @@ namespace atomic_dex
         const auto now = std::chrono::high_resolution_clock::now();
         const auto s   = std::chrono::duration_cast<std::chrono::seconds>(now - m_clock);
 
-        if (s >= 45s)
+        if (s >= 97s)
         {
             process_update();
             m_clock = std::chrono::high_resolution_clock::now();

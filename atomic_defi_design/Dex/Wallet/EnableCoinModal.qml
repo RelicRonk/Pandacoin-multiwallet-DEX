@@ -15,8 +15,8 @@ import Dex.Themes 1.0 as Dex
 MultipageModal
 {
     id: root
-    horizontalPadding: 35
-    verticalPadding: 35
+    horizontalPadding: 30
+    verticalPadding: 30
 
     property var coin_cfg_model: API.app.portfolio_pg.global_cfg_mdl
 
@@ -52,15 +52,6 @@ MultipageModal
         Layout.fillWidth: true
         Layout.fillHeight: true
 
-        DexLabel
-        {
-            id: _title
-            Layout.topMargin: 5
-            Layout.alignment: Qt.AlignHCenter
-            font: DexTypo.head6
-            text: qsTr("Enable assets")
-        }
-
         // Search input
         SearchField
         {
@@ -81,7 +72,7 @@ MultipageModal
             titleTopMargin: 0
             topMarginAfterTitle: 0
             spacing: 5
-
+            flickMax: window.height - 240
 
             RowLayout
             {
@@ -117,10 +108,14 @@ MultipageModal
                 visible: coin_cfg_model.all_disabled_proxy.length > 0
                 model: coin_cfg_model.all_disabled_proxy
 
-                Layout.topMargin: -5
+                Layout.topMargin: 5
                 Layout.alignment: Qt.AlignHCenter
-                Layout.preferredHeight: 300
+                Layout.preferredHeight: window.height - 300
                 Layout.fillWidth: true
+
+                Component.onCompleted: {
+                    positionViewAtBeginning()
+                }
 
                 delegate: Item
                 {
@@ -152,7 +147,7 @@ MultipageModal
                                 if (checked !== backend_checked)
                                 {
                                     var data_index = coin_cfg_model.all_disabled_proxy.index(index, 0)
-                                    if ((coin_cfg_model.all_disabled_proxy.setData(data_index, checked, Qt.UserRole + 11)) === false)
+                                    if ((coin_cfg_model.all_disabled_proxy.setData(data_index, checked, Qt.UserRole + 10)) === false)
                                     {
                                         checked = false
                                     }
@@ -222,39 +217,9 @@ MultipageModal
 
         Item
         {
-            Layout.topMargin: 6
-            Layout.fillWidth: true
-            Layout.alignment: Qt.AlignHCenter
-            DexLabel
-            {
-                anchors.left: parent.left
-                anchors.verticalCenter: parent.verticalCenter
-                text: coin_cfg_model.all_disabled_proxy.length > 0 ?
-                        qsTr("You can still enable %1 assets. Selected: %2.")
-                            .arg(setting_modal.enableable_coins_count - API.app.portfolio_pg.portfolio_mdl.length - coin_cfg_model.checked_nb)
-                            .arg(coin_cfg_model.checked_nb) :
-                        qsTr("All assets are already enabled!")
-                color: Dex.CurrentTheme.textPlaceholderColor
-            }
-        }
-
-        Item
-        {
             Layout.alignment: Qt.AlignHCenter
             Layout.fillWidth: true
             Layout.preferredHeight: 40
-
-            DexTransparentButton
-            {
-                anchors.left: parent.left
-                text: qsTr("Change assets limit")
-                Layout.preferredHeight: 35
-                onClicked:
-                {
-                    setting_modal.selectedMenuIndex = 0; 
-                    setting_modal.open()
-                }
-            }
 
             DexTransparentButton
             {
@@ -286,7 +251,7 @@ MultipageModal
             }
             Item { Layout.fillWidth: true }
 
-            DexGradientAppButton
+            DexAppOutlineButton
             {
                 Layout.preferredWidth: 199
                 visible: coin_cfg_model.length > 0

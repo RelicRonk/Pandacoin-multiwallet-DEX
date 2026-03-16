@@ -38,7 +38,7 @@ Item
             Layout.fillHeight: true
             Layout.preferredWidth: 140
 
-            DexImage
+            DefaultImage
             {
                 id: asset_image
                 width: 24
@@ -78,7 +78,7 @@ Item
             Layout.preferredWidth: 80
             horizontalAlignment: Text.AlignRight
             verticalAlignment: Text.AlignVCenter
-            text: price_fiat + API.app.settings_pg.current_fiat_sign
+            text: General.formatDouble(price_fiat, 2, true) + API.app.settings_pg.current_fiat_sign
             font.family: App.DexTypo.fontFamily
             font.pixelSize: 12
         }

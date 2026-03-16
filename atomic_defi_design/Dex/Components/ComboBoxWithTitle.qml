@@ -12,9 +12,9 @@ ColumnLayout
     property alias textRole: input_field.textRole
     property alias valueRole: input_field.valueRole
 
-    TitleText { id: title_text }
+    DexLabel { id: title_text }
 
-    DexComboBox
+    DefaultComboBox
     {
         id: input_field
         Layout.preferredWidth: 300

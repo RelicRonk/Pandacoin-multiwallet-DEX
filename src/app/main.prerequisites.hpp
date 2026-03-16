@@ -37,22 +37,12 @@
 #include <Qaterial/Qaterial.hpp>
 #if defined(ATOMICDEX_HOT_RELOAD)
 #    include <Qaterial/HotReload/HotReload.hpp>
-#    include <SortFilterProxyModel/SortFilterProxyModel.hpp>
 #endif
-
 
 //! Deps
 #include <QSslSocket>
 #include <sodium/core.h>
 #include <wally.hpp>
-
-#if defined(linux) || defined(__APPLE__)
-#    define BOOST_STACKTRACE_USE_ADDR2LINE
-#    if defined(__APPLE__)
-#        define _GNU_SOURCE
-#    endif
-#    include <boost/stacktrace.hpp>
-#endif
 
 //! Project Headers
 #include "app.hpp"
@@ -106,12 +96,6 @@ signal_handler(int signal)
 {
     SPDLOG_ERROR("sigabort received, cleaning kdf");
     atomic_dex::kill_executable(atomic_dex::g_dex_api);
-#if defined(linux) || defined(__APPLE__)
-    boost::stacktrace::safe_dump_to("./backtrace.dump");
-    std::ifstream                 ifs("./backtrace.dump");
-    boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump(ifs);
-    SPDLOG_ERROR("stacktrace: {}", boost::stacktrace::to_string(st));
-#endif
     std::exit(signal);
 }
 
@@ -119,20 +103,6 @@ static void
 connect_signals_handler()
 {
     SPDLOG_INFO("connecting signal SIGABRT to the signal handler");
-#if defined(linux) || defined(__APPLE__)
-    if (std::filesystem::exists("./backtrace.dump"))
-    {
-        // there is a backtrace
-        std::ifstream ifs("./backtrace.dump");
-
-        boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump(ifs);
-        std::cout << "Previous run crashed:\n" << st << std::endl;
-
-        // cleaning up
-        ifs.close();
-        std::filesystem::remove("./backtrace.dump");
-    }
-#endif
     std::signal(SIGABRT, &signal_handler);
     std::signal(SIGSEGV, &signal_handler);
     std::signal(SIGTERM, &signal_handler);
@@ -345,10 +315,9 @@ handle_settings(QSettings& settings)
     create_settings_functor("AvailableLang", QStringList{"en", "es", "fr", "de", "tr", "ru"});
     create_settings_functor("CurrentLang", QString("en"));
     create_settings_functor("2FA", 0);
-    create_settings_functor("MaximumNbCoinsEnabled", 50);
     create_settings_functor("PirateSyncDate", timestamp);
     create_settings_functor("UseSyncDate", false);
-    create_settings_functor("DefaultTradingMode", TradingMode::Simple);
+    create_settings_functor("DefaultTradingMode", TradingMode::Pro);
     create_settings_functor("FontMode", QQuickWindow::TextRenderType::QtTextRendering);
 }
 

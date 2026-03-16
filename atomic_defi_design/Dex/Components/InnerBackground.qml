@@ -1,9 +1,9 @@
 import QtQuick 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import Dex.Themes 1.0 as Dex
 
-DexRectangle
+DefaultRectangle
 {
     id: rect
 

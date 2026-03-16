@@ -17,7 +17,7 @@ ColumnLayout
     Layout.fillHeight: true
     property alias currentIndex: orderformTabView.currentIndex
     property int loop_count: 0
-    property bool show_waiting_for_trade_preimage: false;
+    property bool show_waiting_for_trade_preimage: false
     property var fees: API.app.trading_pg.fees
     property var preimage_rpc_busy: API.app.trading_pg.preimage_rpc_busy
     property var trade_preimage_error: fees.hasOwnProperty('error') ? fees["error"].split("] ").slice(-1) : ""
@@ -71,13 +71,13 @@ ColumnLayout
     Timer
     {
         id: check_trade_preimage
-        interval: 500;
+        interval: 1000;
         running: false;
         repeat: true;
         triggeredOnStart: true;
         onTriggered: {
             loop_count++;
-            console.log("Getting fees info... " + loop_count + "/50")
+            console.log("Getting fees info... " + loop_count + "/20")
             if (trade_preimage_ready)
             {
                 show_waiting_for_trade_preimage = false
@@ -93,7 +93,7 @@ ColumnLayout
                 show_waiting_for_trade_preimage = false
                 stop()
             }
-            else if (loop_count > 50)
+            else if (loop_count > 20)
             {
                 loop_count = 0
                 show_waiting_for_trade_preimage = false
@@ -106,9 +106,8 @@ ColumnLayout
     Qaterial.LatoTabBar
     {
         id: orderformTabView
-
         background: null
-        Layout.leftMargin: 6
+        Layout.leftMargin: 8
 
         Qaterial.LatoTabButton
         {
@@ -138,22 +137,16 @@ ColumnLayout
         Qaterial.SwipeView
         {
             id: orderformSwipeView
-            clip: true
             interactive: false
             currentIndex: orderformTabView.currentIndex
             anchors.fill: parent
-
-            onCurrentIndexChanged:
-            {
-                API.app.trading_pg.maker_mode = currentIndex === makerOrderform_idx ? true : false
-                orderformSwipeView.currentItem.update()
-                API.app.trading_pg.reset_order()
-                reset_fees_state()
-            }
+            clip: true
 
             Item
             {
                 id: takerOrderform
+                visible: currentIndex === takerOrderform_idx
+                enabled: visible
 
                 OrderForm
                 {
@@ -176,6 +169,8 @@ ColumnLayout
             Item
             {
                 id: makerOrderform
+                visible: currentIndex === makerOrderform_idx
+                enabled: visible
 
                 OrderForm
                 {
@@ -196,6 +191,14 @@ ColumnLayout
                     }
                     swap_btn_spinner.visible: show_waiting_for_trade_preimage
                 }
+            }
+
+            onCurrentIndexChanged:
+            {
+                API.app.trading_pg.maker_mode = currentIndex === makerOrderform_idx ? true : false
+                orderformSwipeView.currentItem.update()
+                API.app.trading_pg.reset_order()
+                reset_fees_state()
             }
         }
     }
