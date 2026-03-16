@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 
 import Qaterial 1.0 as Qaterial
 
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import "../Components"
 import "../Constants" as Dex
 import App 1.0
@@ -67,7 +67,7 @@ GradientRectangle
         anchors.verticalCenter: parent.verticalCenter
 
 
-        DexRectangle
+        DefaultRectangle
         {
             anchors.centerIn: parent
             anchors.fill: parent

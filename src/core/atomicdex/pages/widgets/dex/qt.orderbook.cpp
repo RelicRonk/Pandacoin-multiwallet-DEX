@@ -81,7 +81,7 @@ namespace atomic_dex
     void
     qt_orderbook_wrapper::refresh_orderbook_model_data(kdf::orderbook_result_rpc answer)
     {
-        // SPDLOG_INFO("[qt_orderbook_wrapper::refresh_orderbook_model_data] bids/asks size: {}/{}", answer.bids.size(), answer.asks.size());
+        spdlog::stopwatch sw; using namespace std::chrono;
         this->m_asks->refresh_orderbook_model_data(answer.asks);
         this->m_bids->refresh_orderbook_model_data(answer.bids);
         const auto data = this->m_system_manager.get_system<orderbook_scanner_service>().get_bestorders_data();
@@ -91,20 +91,20 @@ namespace atomic_dex
         }
         else if (m_best_orders->rowCount() == 0)
         {
-            // SPDLOG_INFO("[qt_orderbook_wrapper::refresh_orderbook_model_data] : reset_best_orders");
-            m_best_orders->reset_orderbook(data, true);
+            m_best_orders->reset_orderbook(data);
         }
         else
         {
-            // SPDLOG_INFO("[qt_orderbook_wrapper::refresh_orderbook_model_data] : refresh_best_orders");
-            m_best_orders->refresh_orderbook_model_data(data, true);
+            m_best_orders->refresh_orderbook_model_data(data);
         }
         this->set_both_taker_vol();
+        if (sw.elapsed().count() > 0.2) { SPDLOG_DEBUG("Time elapsed in qt_orderbook_wrapper::refresh_orderbook_model_data with bids/asks size {}/{} and best_orders size {}: {}", answer.bids.size(), answer.asks.size(), m_best_orders->rowCount(), duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
     qt_orderbook_wrapper::reset_orderbook(kdf::orderbook_result_rpc answer)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         this->m_asks->reset_orderbook(answer.asks);
         this->m_bids->reset_orderbook(answer.bids);
         this->set_both_taker_vol();
@@ -114,9 +114,9 @@ namespace atomic_dex
             m_system_manager.get_system<trading_page>().set_preferred_order(m_selected_best_order->value());
             m_selected_best_order = std::nullopt;
         }
-        SPDLOG_INFO("m_best_orders->clear_orderbook()");
         m_best_orders->clear_orderbook();                                                     ///< Remove all elements from the model
         this->m_system_manager.get_system<orderbook_scanner_service>().process_best_orders(); ///< re process the model
+        if (sw.elapsed().count() > 0.06) { SPDLOG_DEBUG("Time elapsed in qt_orderbook_wrapper::reset_orderbook: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
@@ -142,6 +142,7 @@ namespace atomic_dex
     void
     atomic_dex::qt_orderbook_wrapper::set_both_taker_vol()
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         auto&& [base, rel]         = m_system_manager.get_system<kdf_service>().get_taker_vol();
         this->m_base_max_taker_vol = QJsonObject{
             {"denom", QString::fromStdString(base.denom)},
@@ -161,8 +162,8 @@ namespace atomic_dex
         emit baseMinTakerVolChanged();
         this->m_rel_min_taker_vol = QString::fromStdString(min_rel.min_trading_vol);
         emit relMinTakerVolChanged();
-
         emit currentMinTakerVolChanged();
+        if (sw.elapsed().count() > 0.04) { SPDLOG_DEBUG("Time elapsed in atomic_dex::qt_orderbook_wrapper::set_both_taker_vol: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 } // namespace atomic_dex
 
@@ -172,16 +173,17 @@ namespace atomic_dex
     void
     qt_orderbook_wrapper::refresh_best_orders()
     {
+        spdlog::stopwatch sw;
         if (safe_float(m_system_manager.get_system<trading_page>().get_volume().toStdString()) > 0)
         {
-            SPDLOG_INFO("qt_orderbook_wrapper::refresh_best_orders() >> process_best_orders()");
             this->m_system_manager.get_system<orderbook_scanner_service>().process_best_orders();
         }
         else
         {
-            SPDLOG_INFO("qt_orderbook_wrapper::refresh_best_orders() >> get_best_orders()->clear_orderbook()");
             get_best_orders()->clear_orderbook();
         }
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.02) { SPDLOG_DEBUG("Time elapsed in qt_orderbook_wrapper::refresh_best_orders: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
@@ -208,12 +210,8 @@ namespace atomic_dex
             out["rel_max_volume"]        = QString::fromStdString(order.rel_max_volume);
             out["uuid"]                  = QString::fromStdString(order.uuid);
             auto& trading_pg             = m_system_manager.get_system<trading_page>();
-            if (trading_pg.get_current_trading_mode() == TradingModeGadget::Simple)
-            {
-                out["initial_input_volume"] = trading_pg.get_volume();
-            }
-            m_selected_best_order = out;
 
+            m_selected_best_order = out;
 
             auto right_coin = trading_pg.get_market_pairs_mdl()->get_right_selected_coin();
             if (right_coin == out.value("coin").toString())
@@ -253,6 +251,7 @@ namespace atomic_dex
     QString
     qt_orderbook_wrapper::get_current_min_taker_vol() const
     {
+        SPDLOG_DEBUG("UNUSED ??");
         QString    cur_taker_vol   = get_base_min_taker_vol();
         auto&      trading_pg      = m_system_manager.get_system<trading_page>();
         auto       preferred_order = trading_pg.get_raw_preferred_order();

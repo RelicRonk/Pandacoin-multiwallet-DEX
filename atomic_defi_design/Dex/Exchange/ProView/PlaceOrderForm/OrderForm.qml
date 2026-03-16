@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qaterial 1.0 as Qaterial
 import "../../../Components"
 import "../../../Constants"
@@ -16,7 +16,7 @@ ColumnLayout
     id: root
     anchors.horizontalCenter: parent.horizontalCenter
     anchors.fill: parent
-    anchors.margins: 20
+    anchors.margins: 10
     spacing: 8
 
     function focusVolumeField()
@@ -414,7 +414,7 @@ ColumnLayout
         Layout.preferredWidth: parent.width - 16
         height: 28
 
-        DexGradientAppButton
+        GradientButton
         {
             id: swap_btn
             height: 32

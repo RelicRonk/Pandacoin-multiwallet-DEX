@@ -92,7 +92,7 @@ MultipageModal
                 onClicked: root.close()
             }
 
-            PrimaryButton
+            DefaultButton
             {
                 id: submitButton
                 Layout.preferredWidth: parent.width / 100 * 48
@@ -290,6 +290,7 @@ MultipageModal
             {
                 anchors.fill: parent
                 model: portfolio_mdl.portfolio_proxy_mdl
+                clip: true
 
                 delegate: ColumnLayout
                 {

@@ -17,19 +17,17 @@ MultipageModal
     id: root
     readonly property var fees: API.app.trading_pg.fees
     width: 720
-    height: window.height - 80
     horizontalPadding: 10
-    verticalPadding: 10
+    verticalPadding: 30
     closePolicy: Popup.NoAutoClose
 
     MultipageModalContent
     {
-        titleText: qsTr("Confirm Exchange Details")
-        title.font.pixelSize: Style.textSize2
+        titleText: qsTr(" ")
         titleAlignment: Qt.AlignHCenter
-        titleTopMargin: 0
-        topMarginAfterTitle: 10
-        flickMax: window.height - 385
+        titleTopMargin: 5
+        topMarginAfterTitle: 5
+        flickMax: 720
 
         header: [
             RowLayout
@@ -76,6 +74,8 @@ MultipageModal
             PriceLineSimplified
             {
                 id: price_line
+                Layout.leftMargin: 20
+                Layout.rightMargin: 20
                 Layout.fillWidth: true
             }
         ]
@@ -451,7 +451,7 @@ MultipageModal
 
             Item { Layout.fillWidth: true },
 
-            DexGradientAppButton
+            DexAppOutlineButton
             {
                 text: qsTr("Confirm")
                 padding: 10

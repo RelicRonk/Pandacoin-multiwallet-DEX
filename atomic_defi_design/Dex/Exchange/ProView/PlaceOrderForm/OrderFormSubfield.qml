@@ -1,14 +1,14 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import "../../../Constants" as Dex
 import "../../../Components"
 import App 1.0
 import Dex.Themes 1.0 as Dex
 
-// todo: coding style is wrong, use camelCase.
+// TODO: coding style is wrong, use camelCase.
 RowLayout
 {
     id: control
@@ -50,7 +50,7 @@ RowLayout
             text: "-1%"
         }
 
-        DexTooltip
+        DefaultTooltip
         {
             id: _left_tooltip
             visible: _left_btn.containsMouse && left_tooltip_text != ""
@@ -116,7 +116,7 @@ RowLayout
                 text: "0%"
             }
 
-            DexTooltip
+            DefaultTooltip
             {
                 id: _middle_tooltip
                 visible: _middle_btn.containsMouse && middle_tooltip_text != ""
@@ -171,7 +171,7 @@ RowLayout
             text: "+1%"
         }
 
-        DexTooltip
+        DefaultTooltip
         {
             id: _right_tooltip
             visible: _right_btn.containsMouse && right_tooltip_text != ""

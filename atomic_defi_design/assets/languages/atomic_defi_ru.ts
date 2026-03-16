@@ -1063,19 +1063,6 @@
     </message>
 </context>
 <context>
-    <name>DefaultRangeSlider</name>
-    <message>
-        <location filename="../../Dex/Components/DefaultRangeSlider.qml" line="107"/>
-        <source>Min</source>
-        <translation>Мин</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DefaultRangeSlider.qml" line="115"/>
-        <source>Max</source>
-        <translation>Макс</translation>
-    </message>
-</context>
-<context>
     <name>DefaultTextEdit</name>
     <message>
         <location filename="../../Dex/Components/DefaultTextEdit.qml" line="12"/>
@@ -1169,24 +1156,6 @@
         <location filename="../../Dex/Components/DexPaginator.qml" line="97"/>
         <source>items per page</source>
         <translation>элементов на странице</translation>
-    </message>
-</context>
-<context>
-    <name>DexRangeSlider</name>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="109"/>
-        <source>Min</source>
-        <translation>Мин</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="116"/>
-        <source>Half</source>
-        <translation>Половина</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/Components/DexRangeSlider.qml" line="123"/>
-        <source>Max</source>
-        <translation>Макс</translation>
     </message>
 </context>
 <context>
@@ -2191,70 +2160,6 @@ They will be removed from the orderbook until you log in again.</source>
     </message>
 </context>
 <context>
-    <name>NewUpdateModal</name>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="38"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="68"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="130"/>
-        <source>Searching new updates</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="45"/>
-        <source>Fetching...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="59"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="82"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="122"/>
-        <location filename="../../Dex/NewUpdateModal.qml" line="144"/>
-        <source>Close</source>
-        <translation>Закрыть</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="74"/>
-        <source>Could not check new updates for the following reason: 
-%1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="93"/>
-        <source>New version found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="136"/>
-        <source>Your application is up to date!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="92"/>
-        <source>Mandatory version found</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="100"/>
-        <source>%1 %2 is available !</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="107"/>
-        <source>This update is mandatory to continue using the application</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="122"/>
-        <source>Close Dex</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NewUpdateModal.qml" line="116"/>
-        <source>Download</source>
-        <translation>Скачать</translation>
-    </message>
-</context>
-<context>
     <name>NewWallet</name>
     <message>
         <location filename="../../Dex/Screens/Startup/NewWallet.qml" line="73"/>
@@ -2370,29 +2275,6 @@ They will be removed from the orderbook until you log in again.</source>
         <location filename="../../Dex/Screens/Startup/NewWallet.qml" line="732"/>
         <source>Continue</source>
         <translation>Продолжить</translation>
-    </message>
-</context>
-<context>
-    <name>NoConnection</name>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="19"/>
-        <source>No connection</source>
-        <translation>Нет соединения</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="25"/>
-        <source>Please make sure you are connected to the internet</source>
-        <translation>Пожалуйста, убедитесь, что вы подключены к Интернету</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="31"/>
-        <source>Will automatically retry in %1 seconds</source>
-        <translation>Повторная попытка подключения через %1 секунд</translation>
-    </message>
-    <message>
-        <location filename="../../Dex/NoConnection.qml" line="40"/>
-        <source>Retry</source>
-        <translation>Повторная попытка поключения</translation>
     </message>
 </context>
 <context>
@@ -3031,14 +2913,6 @@ Please select a new order.</source>
     </message>
 </context>
 <context>
-    <name>QObject</name>
-    <message>
-        <location filename="../../../src/core/atomicdex/services/update/update.checker.service.cpp" line="50"/>
-        <source>Cannot reach the endpoint: </source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>ReceiveModal</name>
     <message>
         <location filename="../../Dex/Wallet/ReceiveModal.qml" line="19"/>
@@ -3557,11 +3431,6 @@ Please select a new order.</source>
         <location filename="../../Dex/Settings/SettingModal.qml" line="246"/>
         <source>Hide Poison Transactions in History</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Dex/Settings/SettingModal.qml" line="270"/>
-        <source>Maximum number of enabled coins</source>
-        <translation>Макс. количество активированных монет</translation>
     </message>
     <message>
         <location filename="../../Dex/Settings/SettingModal.qml" line="297"/>
@@ -4530,14 +4399,6 @@ There is a toggle in settings where you can turn on/off the display of these tra
         <location filename="../../Dex/Wallet/Transactions.qml" line="136"/>
         <source>Unconfirmed</source>
         <translation>Не подтверждена</translation>
-    </message>
-</context>
-<context>
-    <name>UpdateInvalidChecksum</name>
-    <message>
-        <location filename="../../Dex/Dashboard/UpdateInvalidChecksum.qml" line="7"/>
-        <source>The downloaded update archive is corrupted !</source>
-        <translation>Скачаный архив с обновлением поврежден !</translation>
     </message>
 </context>
 <context>

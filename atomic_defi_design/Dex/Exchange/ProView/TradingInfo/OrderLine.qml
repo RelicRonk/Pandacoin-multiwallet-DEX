@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import Qaterial 1.0 as Qaterial
 
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import bignumberjs 1.0
 
@@ -83,8 +83,6 @@ FloatingBackground
             {
                 Layout.fillWidth: true
                 Layout.preferredHeight: childrenRect.height
-
-                clip: true
 
                 DexLabel
                 {

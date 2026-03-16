@@ -134,15 +134,10 @@ namespace atomic_dex
         return true;
     }
 
-    void
-    orderbook_proxy_model::qml_sort(int column, Qt::SortOrder order)
-    {
-        this->sort(column, order);
-    }
-
     bool
     orderbook_proxy_model::filterAcceptsRow(int source_row, const QModelIndex& source_parent) const
     {
+        //SPDLOG_DEBUG("orderbook_proxy_model::filterAcceptsRow");
         [[maybe_unused]] QModelIndex idx = this->sourceModel()->index(source_row, 0, source_parent);
         assert(this->sourceModel()->hasIndex(idx.row(), 0));
         auto* orderbook = qobject_cast<orderbook_model*>(this->sourceModel());
@@ -152,24 +147,21 @@ namespace atomic_dex
             switch (orderbook->get_orderbook_kind())
             {
             case orderbook_model::kind::asks:
+                break;
             case orderbook_model::kind::bids:
                 break;
             case orderbook_model::kind::best_orders:
-                t_float_50  limit("10000");
-                t_float_50  rates               = safe_float(this->sourceModel()->data(idx, orderbook_model::CEXRatesRole).toString().toStdString());
-                t_float_50  fiat_price          = safe_float(this->sourceModel()->data(idx, orderbook_model::PriceFiatRole).toString().toStdString());
-                bool        is_cex_id_available = this->sourceModel()->data(idx, orderbook_model::HaveCEXIDRole).toBool();
-                const auto& provider            = this->m_system_mgr.get_system<komodo_prices_provider>();
                 std::string ticker              = this->sourceModel()->data(idx, orderbook_model::CoinRole).toString().toStdString();
                 const auto  coin_info           = this->m_system_mgr.get_system<portfolio_page>().get_global_cfg()->get_coin_info(ticker);
-                const auto  volume              = provider.get_total_volume(utils::retrieve_main_ticker(ticker));
                 std::string left_ticker         = this->m_system_mgr.get_system<trading_page>().get_market_pairs_mdl()->get_left_selected_coin().toStdString();
                 const auto  left_coin_info      = this->m_system_mgr.get_system<portfolio_page>().get_global_cfg()->get_coin_info(left_ticker);
+                t_float_50  fiat_price          = safe_float(this->sourceModel()->data(idx, orderbook_model::PriceFiatRole).toString().toStdString());
 
                 if (coin_info.ticker.empty() || coin_info.wallet_only) //< this means it's not present in our cfg - skipping
                 {
                     return false;
                 }
+
                 if (left_coin_info.is_testnet.value_or(false))
                 {
                     if (coin_info.is_testnet.value_or(false))
@@ -178,10 +170,17 @@ namespace atomic_dex
                     }
                     return false;
                 }
+
+                if (fiat_price <= 0)
+                {
+                    return false;
+                }
+
                 return true;
             }
         }
 
         return QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent);
     }
+
 } // namespace atomic_dex

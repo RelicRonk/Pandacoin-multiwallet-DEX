@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qt.labs.settings 1.0
 
 
@@ -62,7 +62,7 @@ Item
 
             Item { Layout.fillWidth: true }
 
-            DexComboBox
+            DefaultComboBox
             {
                 id: combo_fiat
                 width: 100
@@ -96,7 +96,7 @@ Item
             anchors.horizontalCenter: parent.horizontalCenter
             height: 50
 
-            DexText
+            DexLabel
             {
                 text: qsTr("Recommended: ")
                 font.pixelSize: Style.textSizeSmall4
@@ -120,13 +120,13 @@ Item
                 {
                     model: recommended_fiats
 
-                    delegate: DexText
+                    delegate: DexLabel
                     {
                         text: modelData
                         color: DexTheme.foregroundColor
                         opacity: text == API.app.settings_pg.current_fiat ? 1 : fiats_mouse_area.containsMouse ? .8 : .6
 
-                        DexMouseArea
+                        DefaultMouseArea
                         {
                             id: fiats_mouse_area
                             anchors.fill: parent

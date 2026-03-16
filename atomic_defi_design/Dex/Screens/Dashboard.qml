@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import QtWebEngine 1.10
 
 import "../Components"
@@ -14,7 +14,6 @@ import "../Exchange"
 import "../Settings"
 import "../Support"
 import "../Sidebar" as Sidebar
-import "../Fiat"
 import "../Settings" as SettingsPage
 import "../Support" as SupportPage
 import "../Screens"
@@ -96,7 +95,8 @@ Item
     SettingsPage.SettingModal { id: setting_modal }
 
     // Force restart modal: opened when the user has more coins enabled than specified in its configuration
-    ForceRestartModal {
+    RestartModal {
+        focus: true
         reasonMsg: qsTr("The current number of enabled coins does not match your configuration specification. Your assets configuration will be reset.")
         Component.onCompleted: {
             if (API.app.portfolio_pg.portfolio_mdl.length > atomic_settings2.value("MaximumNbCoinsEnabled")) {
@@ -171,6 +171,11 @@ Item
         {
             id: webEngineView
             backgroundColor: "transparent"
+            settings.localContentCanAccessRemoteUrls: true
+            settings.errorPageEnabled: false
+            onJavaScriptConsoleMessage: (level, message, lineNumber, sourceID) => {
+                // By not printing or handling this, you "suppress" it within your app logic
+            }
         }
 
         DefaultLoader
@@ -232,7 +237,7 @@ Item
                     pct_value.font.pixelSize: 11
                 }
 
-                DexMouseArea
+                DefaultMouseArea
                 {
                     id: download_mouse_area
                     anchors.fill: parent

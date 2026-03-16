@@ -24,11 +24,17 @@ Dex.ComboBoxWithSearchBar
     textRole: "ticker"
     valueRole: "ticker"
 
-    popupMaxHeight: Math.min(model.rowCount() * 85 + 85, 600)
+    popupMaxHeight: Math.min(model.rowCount() * 85 + 85, 570)
     popupForceMaxHeight: true
 
     searchBar.visible: true
     searchBar.searchModel: model
+
+    //Component.onCompleted: {
+    //    console.log("height = " + height) // 85
+    //    console.log("model.rowCount = " + model.rowCount()) // 228
+    //    console.log("popupMaxHeight = " + popupMaxHeight) // 570
+    //}
 
     delegate: ItemDelegate
     {
@@ -38,7 +44,7 @@ Dex.ComboBoxWithSearchBar
         highlighted: control.highlightedIndex === index
 
         contentItem: DexComboBoxLine { details: model }
-        background: Dex.DexRectangle
+        background: Dex.DefaultRectangle
         {
             anchors.fill: _delegate
             color: _delegate.highlighted ? Dex.CurrentTheme.comboBoxDropdownItemHighlightedColor : Dex.CurrentTheme.comboBoxBackgroundColor
@@ -56,7 +62,6 @@ Dex.ComboBoxWithSearchBar
 
         function forceUpdateDetails()
         {
-            console.log("Portfolio item data changed, force-updating the selected ticker details!")
             ++update_count
         }
 
@@ -68,10 +73,10 @@ Dex.ComboBoxWithSearchBar
             const new_details = {
                 update_count:           _contentRow.update_count,
                 ticker:                 model.data(model.index(idx, 0), 257),
-                name:                   model.data(model.index(idx, 0), 259),
-                balance:                model.data(model.index(idx, 0), 260),
-                main_currency_balance:  model.data(model.index(idx, 0), 261),
-                activation_status:      model.data(model.index(idx, 0), 266)
+                name:                   model.data(model.index(idx, 0), 258),
+                balance:                model.data(model.index(idx, 0), 259),
+                main_currency_balance:  model.data(model.index(idx, 0), 260),
+                activation_status:      model.data(model.index(idx, 0), 265)
             }
 
             prev_details = new_details

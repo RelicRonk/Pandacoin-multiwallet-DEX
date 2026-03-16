@@ -10,14 +10,19 @@
 
 namespace
 {
+<<<<<<< HEAD
     constexpr const char*                 g_komodo_prices_endpoint = "https://cache.defi-stats.komodo.earth";
     constexpr const char*                 g_komodo_prices_endpoint_fallback = "https://prices.cipig.net:1717";
+=======
+    constexpr const char*                 g_komodo_prices_endpoint = "https://prices.cipig.net:1717";
+    constexpr const char*                 g_komodo_prices_endpoint_fallback = "https://defistats.gleec.com";
+>>>>>>> 25636d8b4802eb10f87fd857341be4b46d0d9f45
 
     web::http::client::http_client_config g_komodo_prices_cfg{[]()
                                                               {
                                                                   web::http::client::http_client_config cfg;
                                                                   cfg.set_validate_certificates(false);
-                                                                  cfg.set_timeout(std::chrono::seconds(60));
+                                                                  cfg.set_timeout(std::chrono::seconds(5));
                                                                   return cfg;
                                                               }()};
     t_http_client_ptr g_komodo_prices_client = std::make_unique<web::http::client::http_client>(FROM_STD_STR(g_komodo_prices_endpoint), g_komodo_prices_cfg);
@@ -77,18 +82,24 @@ namespace atomic_dex::komodo_prices::api
     pplx::task<web::http::http_response>
     async_market_infos(bool fallback)
     {
+<<<<<<< HEAD
         web::http::http_request req;
         req.set_method(web::http::methods::GET);
         std::string endpoint = fallback ? "api/v2/tickers?expire_at=21600" : "api/v3/prices/tickers_v2.json?expire_at=21600";
         if (fallback)
+=======
+        try
+>>>>>>> 25636d8b4802eb10f87fd857341be4b46d0d9f45
         {
-            SPDLOG_INFO("url: {}", TO_STD_STR(g_komodo_prices_client_fallback->base_uri().to_string()) + endpoint);
+            web::http::http_request req;
+            req.set_method(web::http::methods::GET);
+            std::string endpoint = fallback ? "api/v3/prices/tickers_v2?expire_at=259200" : "api/v2/tickers?expire_at=259200";
+            req.set_request_uri(FROM_STD_STR(endpoint));
+            return fallback ? g_komodo_prices_client_fallback->request(req) : g_komodo_prices_client->request(req);
         }
-        else
+        catch (const std::exception& error)
         {
-            SPDLOG_INFO("url: {}", TO_STD_STR(g_komodo_prices_client->base_uri().to_string()) + endpoint);
+            SPDLOG_ERROR("exception in kdf_service::fetch_infos_thread: {}", error.what());
         }
-        req.set_request_uri(FROM_STD_STR(endpoint));
-        return fallback ? g_komodo_prices_client_fallback->request(req) : g_komodo_prices_client->request(req);
     }
 } // namespace atomic_dex::komodo_prices::api

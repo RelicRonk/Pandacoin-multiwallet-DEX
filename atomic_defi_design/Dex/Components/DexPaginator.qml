@@ -23,7 +23,7 @@ RowLayout
     {
         currentValue = Constants.API.app.orders_mdl.current_page
         var model = []
-        if (pageSize < 10) {
+        if (pageSize < 7) {
             for (var i = 0; i < pageSize; i++) {
                 model.push({
                     number: i + 1,
@@ -70,7 +70,7 @@ RowLayout
         refreshBtn()
     }
 
-    DexComboBox
+    DefaultComboBox
     {
         id: itemsPerPageComboBox
 
@@ -78,7 +78,7 @@ RowLayout
         readonly property
         var options: [5, 10, 25]
 
-        Layout.preferredWidth: (root.width / 100) * 14
+        Layout.preferredWidth: (root.width / 100) * 13
         Layout.maximumWidth: 62
         Layout.preferredHeight: 35
         Layout.alignment: Qt.AlignLeft
@@ -88,10 +88,9 @@ RowLayout
         onCurrentValueChanged: Constants.API.app.orders_mdl.limit_nb_elements = currentValue
     }
 
-    DexText
+    DexLabel
     {
-        Layout.preferredWidth: (root.width / 100) * 16
-        Layout.leftMargin: 20
+        Layout.preferredWidth: (root.width / 100) * 15
         Layout.alignment: Qt.AlignLeft
         font.pixelSize: 12
         text: qsTr("items per page")
@@ -103,10 +102,11 @@ RowLayout
         Layout.fillWidth: true
     }
 
-    PaginationButton
+    DefaultButton
     {
         Layout.preferredWidth: (root.width / 100) * 5
         Layout.preferredHeight: width
+        font.pixelSize: 12
         radius: 20
         opacity: enabled ? 1 : .5
         Qaterial.ColorIcon
@@ -132,9 +132,10 @@ RowLayout
             number: 1,
             selected: true
         }]
-        delegate: PaginationButton
+        delegate: DefaultButton
         {
             text: modelData.number === -1 ? "..." : ("" + modelData.number)
+            font.pixelSize: 12
             radius: 30
             Layout.preferredWidth: (root.width / 100) * 4
             Layout.preferredHeight: width
@@ -149,10 +150,11 @@ RowLayout
         }
     }
 
-    PaginationButton
+    DefaultButton
     {
         Layout.preferredWidth: (root.width / 100) * 5
         Layout.preferredHeight: width
+        font.pixelSize: 12
         radius: 20
         opacity: enabled ? 1 : .5
         Qaterial.ColorIcon

@@ -39,6 +39,12 @@ ComboBox
         topPadding: 16
         bottomPadding: 16
 
+        //Component.onCompleted: {
+        //    console.log("height = " + height) // 570
+        //    console.log("control.popupMaxHeight = " + control.popupMaxHeight) // 570
+        //    console.log("contentItem.implicitHeight = " + contentItem.implicitHeight) // 45
+        //}
+
         contentItem: ColumnLayout
         {
             width: popup.width

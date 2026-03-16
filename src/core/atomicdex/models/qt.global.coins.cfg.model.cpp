@@ -92,8 +92,6 @@ namespace atomic_dex
         {
         case TickerRole:
             return QString::fromStdString(item.ticker);
-        case GuiTickerRole:
-            return QString::fromStdString(item.gui_ticker);
         case NameRole:
             return QString::fromStdString(item.name);
         case IsClaimable:
@@ -150,18 +148,11 @@ namespace atomic_dex
             }
             if (real_value)
             {
-                auto enableable_coins_count = m_entity_registry.ctx<QSettings>().value("MaximumNbCoinsEnabled").toULongLong();
-                if (enableable_coins_count <= get_enabled_coins().size() + m_checked_nb)
-                {
-                    return false;
-                }
                 item.checked = real_value;
-                m_checked_nb++;
             }
             else
             {
                 item.checked = real_value;
-                m_checked_nb--;
             }
             emit checked_nbChanged();
             break;
@@ -184,8 +175,8 @@ namespace atomic_dex
     QHash<int, QByteArray>
     global_coins_cfg_model::roleNames() const
     {
-        return {{TickerRole, "ticker"}, {GuiTickerRole, "gui_ticker"},    {NameRole, "name"}, {IsClaimable, "is_claimable"}, {CurrentlyEnabled, "enabled"},
-                {Active, "active"},     {IsCustomCoin, "is_custom_coin"}, {Type, "type"},     {Checked, "checked"}};
+        return {{TickerRole, "ticker"}, {NameRole, "name"}, {IsClaimable, "is_claimable"}, {CurrentlyEnabled, "enabled"},
+                {Active, "active"}, {IsCustomCoin, "is_custom_coin"}, {Type, "type"}, {Checked, "checked"}};
     }
 } // namespace atomic_dex
 
@@ -224,7 +215,6 @@ namespace atomic_dex
     void global_coins_cfg_model::update_status(const TArray& tickers, bool status)
     {
         auto update_functor = [this, status](QModelIndexList res, [[maybe_unused]] const QString& ticker) {
-            // SPDLOG_INFO("Changing Active/CurrentlyEnabled status to {} for ticker {}", status, ticker.toStdString());
             const QModelIndex& idx = res.at(0);
             update_value(Active, status, idx, *this);
             update_value(CurrentlyEnabled, status, idx, *this);
@@ -334,13 +324,6 @@ namespace atomic_dex
     global_coins_cfg_model::get_all_utxo_proxy() const 
     {
         return m_proxies[CoinType::UTXO];
-    }
-
-
-    global_coins_cfg_proxy_model*
-    global_coins_cfg_model::get_all_slp_proxy() const
-    {
-        return m_proxies[CoinType::SLP];
     }
 
     global_coins_cfg_proxy_model*

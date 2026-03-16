@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qt.labs.settings 1.0
 
 import App 1.0
@@ -23,7 +23,7 @@ Item {
     
     signal clicked()
 
-    DexRectangle {
+    DefaultRectangle {
         anchors.fill: parent
         height: 45
         radius: 5
@@ -41,7 +41,7 @@ Item {
         opacity: area.containsMouse ? 1 : .7
     }
 
-    DexMouseArea {
+    DefaultMouseArea {
         id: area
         hoverEnabled: true
         onClicked: parent.clicked()

@@ -1,11 +1,11 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import Qt.labs.settings 1.0
 import QtQml 2.15
 import QtQuick.Window 2.15
-import QtQuick.Controls.Universal 2.12
+import QtQuick.Controls.Universal 2.15
 
 import Qaterial 1.0 as Qaterial
 import ModelHelper 0.1
@@ -22,7 +22,6 @@ Qaterial.Dialog
     property alias selectedMenuIndex: menu_list.currentIndex
     property var recommended_fiats: API.app.settings_pg.get_recommended_fiats()
     property var fiats: API.app.settings_pg.get_available_fiats()
-    property var enableable_coins_count: enableable_coins_count_combo_box.currentValue
     property var orders: API.app.orders_mdl.orders_proxy_mdl.ModelHelper
     readonly property date default_min_date: new Date("2019-01-01")
     readonly property date default_max_date: new Date(new Date().setDate(new Date().getDate()))
@@ -52,7 +51,7 @@ Qaterial.Dialog
         }
     }
 
-    background: DexRectangle
+    background: DefaultRectangle
     {
         color: DexTheme.backgroundColor
         border.width: 0
@@ -128,7 +127,7 @@ Qaterial.Dialog
                     currentIndex: 0
                     model: [qsTr("General"), qsTr("Language"), qsTr("User Interface"), qsTr("Security"), qsTr("About & Version")]
 
-                    delegate: DexRectangle
+                    delegate: DefaultRectangle
                     {
                         width: parent.width
                         height: 60
@@ -167,7 +166,7 @@ Qaterial.Dialog
                             })
                         }
 
-                        DexMouseArea
+                        DefaultMouseArea
                         {
                             id: delegateMouseArea
                             hoverEnabled: true
@@ -178,7 +177,7 @@ Qaterial.Dialog
                 }
             }
 
-            DexRectangle
+            DefaultRectangle
             {
                 Layout.fillHeight: true
                 width: 1
@@ -253,39 +252,6 @@ Qaterial.Dialog
                                     Layout.alignment: Qt.AlignVCenter
                                     Component.onCompleted: checked = API.app.settings_pg.spamfilter_enabled
                                     onCheckedChanged: API.app.settings_pg.spamfilter_enabled = checked
-                                }
-                            }
-
-                            // Max Coins Dropdown
-                            RowLayout
-                            {
-                                width: parent.width - 30
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                height: 50
-
-                                DexLabel
-                                {
-                                    Layout.alignment: Qt.AlignVCenter
-                                    font: DexTypo.subtitle1
-                                    text: qsTr("Maximum number of enabled coins")
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                DexComboBox
-                                {
-                                    id: enableable_coins_count_combo_box
-                                    Layout.alignment: Qt.AlignVCenter
-                                    width: 140
-                                    height: 45
-                                    dropDownMaxHeight: 600
-                                    model: [10, 20, 50, 75, 100, 150, 500]
-                                    currentIndex: model.indexOf(parseInt(atomic_settings2.value("MaximumNbCoinsEnabled")))
-                                    onCurrentIndexChanged: atomic_settings2.setValue("MaximumNbCoinsEnabled", model[currentIndex])
-                                    Component.onCompleted:
-                                    {
-                                        currentIndex: model.indexOf(parseInt(atomic_settings2.value("MaximumNbCoinsEnabled")))
-                                    }
                                 }
                             }
 
@@ -377,11 +343,11 @@ Qaterial.Dialog
                                         cancelButtonText: qsTr("Cancel"),
                                         onAccepted: function()
                                         {
-                                            restart_modal.open()
-                                            restart_modal.item.onTimerEnded = () =>
-                                            {
+                                            //restart_modal.open()
+                                            //restart_modal.item.onTimerEnded = () =>
+                                            //{
                                                 API.app.reset_coin_cfg()
-                                            }
+                                            //}
                                         }
                                     })
                                     reset_dialog.close()
@@ -822,24 +788,7 @@ Qaterial.Dialog
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
 
-            DexAppButton
-            {
-                text: qsTr("Search for Update")
-                height: 48
-                radius: 20
-                leftPadding: 20
-                rightPadding: 20
-                font: Qt.font(
-                {
-                    pixelSize: 19,
-                    letterSpacing: 0.15,
-                    family: DexTypo.fontFamily,
-                    weight: Font.Normal
-                })
-                onClicked: newUpdateModal.open()
-            }
-
-            DexAppButton
+            DefaultButton
             {
                 text: qsTr("Logout")
                 color: containsMouse ? DexTheme.buttonColorHovered : 'transparent'
@@ -853,6 +802,9 @@ Qaterial.Dialog
                     weight: Font.Normal
                 })
                 iconSource: Qaterial.Icons.logout
+                //Component.onCompleted: {
+                //     console.log("SettingModal height = " + height) // 48
+                //}
                 onClicked:
                 {
                     setting_modal.close()

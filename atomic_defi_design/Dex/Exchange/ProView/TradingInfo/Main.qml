@@ -56,25 +56,27 @@ ColumnLayout
 
     Rectangle
     {
+        Layout.preferredWidth: 450
         Layout.fillHeight: true
         color: Dex.CurrentTheme.floatingBackgroundColor
         radius: 10
-        Layout.preferredWidth: 450
 
         Qaterial.SwipeView
         {
             id: swipeView
-            clip: true
             interactive: false
             currentIndex: tabView.currentIndex
             anchors.fill: parent
+            clip: true
 
             ColumnLayout
             {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
                 Layout.topMargin: 8
-                spacing: 8
+                spacing: 7
+                visible: currentIndex === tabView.pair_chart_idx
+                enabled: visible
                 
                 // Ticker selectors.
                 TickerSelectors
@@ -90,37 +92,45 @@ ColumnLayout
                 Chart
                 {
                     id: chart
+                    Layout.preferredWidth: 435
+                    Layout.preferredHeight: 240
                     Layout.topMargin: 8
                     Layout.leftMargin: 5
                     Layout.rightMargin: 5
                     Layout.fillHeight: true
-                    width: 435
-                    height: 240
                 }
 
                 PriceLineSimplified
                 {
                     id: price_line
+                    Layout.preferredWidth: 435
                     Layout.bottomMargin: 12
                     Layout.leftMargin: 5
                     Layout.rightMargin: 5
-                    Layout.fillWidth: true
                     Layout.fillHeight: true
-                    width: 435
                 }
+            }
+
+            OrdersPage
+            {
+                page_index: currentIndex
+                visible: currentIndex === tabView.order_idx
+                enabled: visible
+            }
+
+            OrdersPage
+            {
+                page_index: currentIndex
+                is_history: true
+                visible: currentIndex === tabView.history_idx
+                enabled: visible
             }
 
             onCurrentIndexChanged:
             {
-                swipeView.currentItem.update();
-            }
-
-            OrdersPage { clip: true }
-
-            OrdersPage
-            {
-                is_history: true
-                clip: true
+                if (currentIndex !== tabView.pair_chart_idx) {
+                    swipeView.currentItem.update()
+                }
             }
         }
     }

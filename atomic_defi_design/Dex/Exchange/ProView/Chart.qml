@@ -20,9 +20,6 @@ Item
 
     function loadChart(right_ticker, left_ticker, force = false, source="livecoinwatch")
     {
-
-        // <script defer src="https://www.livecoinwatch.com/static/lcw-widget.js"></script> <div class="livecoinwatch-widget-1" lcw-coin="BTC" lcw-base="USD" lcw-secondary="BTC" lcw-period="w" lcw-color-tx="#ffffff" lcw-color-pr="#58c7c5" lcw-color-bg="#1f2434" lcw-border-w="1" lcw-digits="8" ></div>
-
         let chart_html = ""
         let symbol = ""
         let widget_x = 385
@@ -54,9 +51,7 @@ Item
             {
                 pair_supported = true
                 symbol = rel_ticker+"-"+base_ticker
-                console.log("symbol", symbol)
-                console.log("loaded_symbol", loaded_symbol)
-                
+
                 if (symbol === loaded_symbol && !force)
                 {
                     webEngineViewPlaceHolder.visible = true
@@ -73,65 +68,11 @@ Item
                     a { pointer-events: none; }
                 </style>
                 <script defer src="https://www.livecoinwatch.com/static/lcw-widget.js"></script>
-                <div class="livecoinwatch-widget-1" lcw-coin="${rel_ticker}" lcw-base="${base_ticker}" lcw-secondary="USDC" lcw-period="w" lcw-color-tx="${Dex.CurrentTheme.foregroundColor}" lcw-color-pr="#58c7c5" lcw-color-bg="${Dex.CurrentTheme.comboBoxBackgroundColor}" lcw-border-w="0" lcw-digits="8" ></div>
+                <div class="livecoinwatch-widget-1" lcw-coin="${rel_ticker}" lcw-base="${base_ticker}" lcw-secondary="USDC" lcw-period="w" lcw-color-tx="${Dex.CurrentTheme.foregroundColor}" lcw-color-pr="#58c7c5" lcw-color-bg="${Dex.CurrentTheme.comboBoxBackgroundColor}" lcw-border-w="0" lcw-digits="9" ></div>
                 `
             }
         }
-        console.log(chart_html)
-
-        if (chart_html == "")
-        {
-            const pair = atomic_qt_utilities.retrieve_main_ticker(left_ticker) + "/" + atomic_qt_utilities.retrieve_main_ticker(right_ticker)
-            const pair_reversed = atomic_qt_utilities.retrieve_main_ticker(right_ticker) + "/" + atomic_qt_utilities.retrieve_main_ticker(left_ticker)
-
-            // Try checking if pair/reversed-pair exists
-            symbol = General.supported_pairs[pair]
-            if (!symbol) symbol = General.supported_pairs[pair_reversed]
-
-            if (!symbol)
-            {
-                pair_supported = false
-                console.log("pair not supported", pair, pair_reversed)
-                return
-            }
-
-            pair_supported = true
-
-            if (symbol === loaded_symbol && !force)
-            {
-                webEngineViewPlaceHolder.visible = true
-                return
-            }
-
-            loaded_symbol = symbol
-
-            chart_html = `
-            <style>
-            body { margin: 0; }
-            </style>
-
-            <!-- TradingView Widget BEGIN -->
-            <div class="tradingview-widget-container">
-            <div id="tradingview_af406"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-            <script type="text/javascript">
-            new TradingView.widget(
-            {
-            "timezone": "Etc/UTC",
-            "locale": "en",
-            "autosize": true,
-            "symbol": "${symbol}",
-            "interval": "D",
-            "theme": "${theme}",
-            "style": "1",
-            "enable_publishing": false,
-            "save_image": false
-            }
-            );
-            </script>
-            </div>
-            <!-- TradingView Widget END -->`
-        }
+        // console.log(chart_html)
         dashboard.webEngineView.loadHtml(chart_html)
     }
 
@@ -230,11 +171,6 @@ Item
     MouseArea {
         id: chart_mousearea
         anchors.fill: webEngineViewPlaceHolder
-        onClicked: {
-            if (webEngineView.visible) {
-                Qt.openUrlExternally("https://www.livecoinwatch.com")
-            }
-        }
     }
 
     Connections

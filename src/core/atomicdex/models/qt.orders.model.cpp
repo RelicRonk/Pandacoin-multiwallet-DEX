@@ -219,16 +219,13 @@ namespace atomic_dex
     bool
     orders_model::removeRows(int position, int rows, [[maybe_unused]] const QModelIndex& parent)
     {
-        SPDLOG_DEBUG("(orders_model::removeRows) removing {} elements at position {}", rows, position);
-
         beginRemoveRows(QModelIndex(), position, position + rows - 1);
-        for (int row = 0; row < rows; ++row)
+        for (int i = position + rows - 1; i >= position; --i)
         {
-            this->m_model_data.orders_and_swaps.erase(begin(m_model_data.orders_and_swaps) + position);
-            emit lengthChanged();
+            this->m_model_data.orders_and_swaps.erase(begin(m_model_data.orders_and_swaps) + i);
         }
         endRemoveRows();
-
+        emit lengthChanged();
         return true;
     }
 
@@ -304,7 +301,6 @@ namespace atomic_dex
     {
         if (static_cast<std::size_t>(current_page) != m_model_data.current_page)
         {
-            SPDLOG_INFO("Current page: {}, new page: {}", m_model_data.current_page, current_page);
             this->set_fetching_busy(true);
             this->reset_backend("set_current_page"); ///< We change page, we need to clear, but do not notify the front-end
             auto& kdf = this->m_system_manager.get_system<kdf_service>();
@@ -422,7 +418,7 @@ namespace atomic_dex
                 update_value(OrdersRoles::BaseCoinAmountRole, contents.base_amount, idx, *this);
                 update_value(OrdersRoles::RelCoinAmountRole, contents.rel_amount, idx, *this);
             }
-            emit lengthChanged();
+            //emit lengthChanged();
         }
     }
 
@@ -459,33 +455,35 @@ namespace atomic_dex
             update_value(OrdersRoles::BaseCoinAmountCurrentCurrencyRole, contents.base_amount_fiat, idx, *this);
             update_value(OrdersRoles::RelCoinAmountCurrentCurrencyRole, contents.rel_amount_fiat, idx, *this);
 
-            emit lengthChanged();
+            //emit lengthChanged();
         }
     }
 
     void
     orders_model::init_model(const orders_and_swaps& contents)
     {
+        spdlog::stopwatch sw;
         const auto size = contents.orders_and_swaps.size();
         if (size == 0)
             return;
-        SPDLOG_INFO("Full initialization, inserting {} elements, nb_elements / page {}", size, contents.limit);
         beginResetModel();
         m_model_data = contents;
-        endResetModel();
         m_orders_id_registry = std::move(m_model_data.orders_registry);
         m_swaps_id_registry  = std::move(m_model_data.swaps_registry);
+        endResetModel();
         emit lengthChanged();
         emit currentPageChanged();
         emit limitNbElementsChanged();
         emit nbPageChanged();
         this->set_average_events_time_registry(nlohmann_json_object_to_qt_json_object(m_model_data.average_events_time));
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.05) { SPDLOG_DEBUG("Time elapsed in orders_model::init_model for {} elements: {}", size, duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
     orders_model::common_insert(const std::vector<t_order_swaps_data>& contents, const std::string& kind)
     {
-        SPDLOG_INFO("common_insert, nb elements to insert: {}", contents.size());
+        spdlog::stopwatch sw; using namespace std::chrono;
         auto& data = m_model_data.orders_and_swaps;
         beginInsertRows(QModelIndex(), rowCount(), rowCount() + static_cast<int>(contents.size()) - 1);
         data.insert(end(data), begin(contents), end(contents));
@@ -497,10 +495,9 @@ namespace atomic_dex
         emit lengthChanged();
         if (m_system_manager.has_system<kdf_service>())
         {
-            SPDLOG_DEBUG("Swaps inserted, refreshing orderbook to get new max taker vol");
             this->m_system_manager.get_system<kdf_service>().process_orderbook(true);
         }
-        SPDLOG_DEBUG("{} model size: {}", kind, rowCount());
+        if (sw.elapsed().count() > 0.01) { SPDLOG_DEBUG("Time elapsed in orders_model::common_insert: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
@@ -535,6 +532,7 @@ namespace atomic_dex
     void
     orders_model::update_or_insert_orders(const orders_and_swaps& contents)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         const auto&                     data = contents.orders_and_swaps;
         std::unordered_set<std::string> are_present;
         if (contents.nb_orders > 0)
@@ -560,13 +558,14 @@ namespace atomic_dex
                 this->common_insert(to_init, "orders");
             }
         }
-
         remove_orders(are_present);
+        if (sw.elapsed().count() > 0.02) { SPDLOG_DEBUG("Time elapsed in orders_model::update_or_insert_orders: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
     orders_model::remove_orders(const t_orders_id_registry& are_present)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         std::vector<std::string> to_remove;
         for (auto&& id: this->m_orders_id_registry)
         {
@@ -584,6 +583,7 @@ namespace atomic_dex
             }
         }
         for (auto&& cur_to_remove: to_remove) { m_orders_id_registry.erase(cur_to_remove); }
+        if (sw.elapsed().count() > 0.01) { SPDLOG_DEBUG("Time elapsed in orders_model::remove_orders: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
@@ -618,22 +618,25 @@ namespace atomic_dex
     void
     orders_model::reset()
     {
-        SPDLOG_DEBUG("resetting orders, will be emitted");
+        spdlog::stopwatch sw;
         this->beginResetModel();
         reset_backend("reset");
         this->endResetModel();
         this->set_fetching_busy(false);
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.03) { SPDLOG_DEBUG("Time elapsed in orders_model::reset: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
-    orders_model::reset_backend(const std::string& from)
+    orders_model::reset_backend([[maybe_unused]] const std::string& from)
     {
-        SPDLOG_DEBUG("clearing orders in backend {}", from);
+        spdlog::stopwatch sw; using namespace std::chrono;
         const auto limit     = this->m_model_data.limit;
         const auto filtering = this->m_model_data.filtering_infos;
         this->m_swaps_id_registry.clear();
         this->m_orders_id_registry.clear();
         this->m_model_data = {.limit = limit, .filtering_infos = filtering};
+        if (sw.elapsed().count() > 0.01) { SPDLOG_DEBUG("Time elapsed in orders_model::reset_backend initiated by {}: {}", from, duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     bool
@@ -651,15 +654,15 @@ namespace atomic_dex
     void
     orders_model::refresh_or_insert(bool after_manual_reset)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         if (after_manual_reset)
         {
             this->set_fetching_busy(false);
-            SPDLOG_INFO("Fetching is not busy anymore");
         }
 
         if (is_fetching_busy())
         {
-            SPDLOG_INFO("Fetching busy skipping");
+            SPDLOG_WARN("Fetching busy, skipping orders_model::refresh_or_insert");
             return;
         }
         const auto& kdf      = m_system_manager.get_system<kdf_service>();
@@ -676,14 +679,16 @@ namespace atomic_dex
             update_or_insert_orders(contents);
             update_or_insert_swaps(contents);
         }
+        if (sw.elapsed().count() > 0.04) { SPDLOG_DEBUG("Time elapsed in orders_model::refresh_or_insert with reset {}: {}", after_manual_reset, duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
     orders_model::set_filtering_infos(t_filtering_infos infos)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         if (this->is_fetching_busy())
         {
-            SPDLOG_WARN("Fetching busy - skipping filtering infos set");
+            SPDLOG_WARN("Fetching busy, skipping orders_model::set_filtering_infos");
             return;
         }
 
@@ -694,7 +699,6 @@ namespace atomic_dex
             //! Filtering changed
             this->set_fetching_busy(true);
             this->reset();
-            // this->reset_backend("set_filtering_infos"); ///< We change page, we need to clear, but do not notify the front-end
             if (this->m_system_manager.has_system<kdf_service>())
             {
                 auto& kdf = this->m_system_manager.get_system<kdf_service>();
@@ -709,6 +713,7 @@ namespace atomic_dex
         {
             this->set_current_page(1);
         }
+        if (sw.elapsed().count() > 0.03) { SPDLOG_DEBUG("Time elapsed in orders_model::set_filtering_infos: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     t_filtering_infos
@@ -784,7 +789,7 @@ namespace atomic_dex
             }
             catch (const std::exception& e)
             {
-                SPDLOG_ERROR("pplx task error from orders_model::recover_fund(QString uuid): {}", e.what());
+                SPDLOG_ERROR("exception in orders_model::recover_fund(QString uuid): {}", e.what());
                 nlohmann::json j_out = nlohmann::json::object();
                 j_out["is_valid"]    = false;
                 j_out["error"]       = e.what();

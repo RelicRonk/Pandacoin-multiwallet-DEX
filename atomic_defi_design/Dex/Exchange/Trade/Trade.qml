@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import Qt.labs.settings 1.0
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 
 import Qaterial 1.0 as Qaterial
 
@@ -13,7 +13,6 @@ import AtomicDEX.TradingMode 1.0
 import "../../Components"
 import "../../Wallet"
 import "Trading/"
-import "SimpleView" as SimpleView
 import App 1.0
 
 Item
@@ -177,33 +176,14 @@ Item
     {
         anchors.fill: parent
         spacing: 8
-        anchors.leftMargin: 8
-        anchors.rightMargin: 8
-
-        TradeViewHeader
-        {
-            id: header
-            width: parent.width
-            height: parent.height * 0.06
-
-            proViewTrInfo: proView.trInfo
-            proViewMarketsOrderBook: proView.marketsOrderBook
-            proViewPlaceOrderForm: proView.placeOrderForm
-        }
+        anchors.margins: 5
 
         ProView
         {
             id: proView
             width: parent.width
-            height: parent.height * 0.91
+            height: parent.height - 10
             visible: API.app.trading_pg.current_trading_mode == TradingMode.Pro
-            enabled: visible
-        }
-
-        SimpleView.Main
-        {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: API.app.trading_pg.current_trading_mode == TradingMode.Simple
             enabled: visible
         }
     }

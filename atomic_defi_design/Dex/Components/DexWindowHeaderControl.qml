@@ -71,7 +71,9 @@ RowLayout
         Layout.fillHeight: true
         foregroundColor: Dex.CurrentTheme.foregroundColor
         icon.source: Qaterial.Icons.windowClose
-
+        //Component.onCompleted: {
+        //      console.log("DexWindowHeaderControl height = " + height) // 30
+        //}
         onClicked: 
         {
             if (orders.count === 0 || !API.app.wallet_mgr.log_status()) Qt.quit()

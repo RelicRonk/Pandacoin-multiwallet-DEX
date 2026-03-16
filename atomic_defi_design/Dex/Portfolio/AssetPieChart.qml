@@ -4,7 +4,7 @@ import QtQuick.Controls 2.15
 
 import QtWebEngine 1.10
 
-import QtGraphicalEffects 1.12
+import QtGraphicalEffects 1.15
 import QtCharts 2.15
 import Qaterial 1.0 as Qaterial
 import ModelHelper 0.1
@@ -78,7 +78,7 @@ ColumnLayout
         }
     }
 
-    DexRectangle
+    DefaultRectangle
     {
         id: bg
         Layout.fillHeight: true
@@ -125,7 +125,7 @@ ColumnLayout
                         id: pieSeries
                     }
 
-                    DexRectangle
+                    DefaultRectangle
                     {
                         anchors.centerIn: parent
                         color: DexTheme.theme === "light" ? DexTheme.contentColorTopBold : bg.color
@@ -248,11 +248,10 @@ ColumnLayout
                         }
                     }
 
-                    DexListView
+                    DefaultListView
                     {
                         id: _pieColumn
                         anchors.fill: parent
-                        clip: true
                         model: portfolio_mdl.pie_chart_proxy_mdl
                         scrollbar_visible: false
 

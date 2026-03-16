@@ -50,15 +50,11 @@ namespace
         {
             return CoinType::BEP20;
         }
-        if (coin_type == "SLP")
-        {
-            return CoinType::SLP;
-        }
         if (coin_type == "PLG-20")
         {
             return CoinType::PLG20;
         }
-        if (coin_type == "Matic")
+        if (coin_type == "Polygon")
         {
             return CoinType::PLG20;
         }
@@ -70,13 +66,13 @@ namespace
         {
             return CoinType::Arbitrum;
         }
+        if (coin_type == "Base")
+        {
+            return CoinType::Base;
+        }
         if (coin_type == "AVX-20")
         {
             return CoinType::AVX20;
-        }
-        if (coin_type == "FTM-20")
-        {
-            return CoinType::FTM20;
         }
         if (coin_type == "HRC-20")
         {
@@ -97,10 +93,6 @@ namespace
         if (coin_type == "Moonbeam")
         {
             return CoinType::Moonbeam;
-        }
-        if (coin_type == "HecoChain")
-        {
-            return CoinType::HecoChain;
         }
         if (coin_type == "SmartBCH")
         {
@@ -165,7 +157,6 @@ namespace atomic_dex
         j.at("active").get_to(cfg.active);
         j.at("explorer_url").get_to(cfg.explorer_url);
         cfg.has_memos            = false;
-        cfg.gui_ticker           = j.contains("gui_coin") ? j.at("gui_coin").get<std::string>() : cfg.ticker;
         cfg.parent_coin          = j.contains("parent_coin") ? j.at("parent_coin").get<std::string>() : cfg.ticker;
         cfg.minimal_claim_amount = cfg.is_claimable ? j.at("minimal_claim_amount").get<std::string>() : "0";
         cfg.coinpaprika_id       = j.contains("coinpaprika_id") ? j.at("coinpaprika_id").get<std::string>() : "test-coin";
@@ -202,14 +193,9 @@ namespace atomic_dex
         {
             cfg.electrum_urls = j.at("electrum").get<std::vector<electrum_server>>();
         }
-        // Used for SLP coins
-        if (j.contains("bchd_urls"))
-        {
-            cfg.bchd_urls = j.at("bchd_urls").get<std::vector<std::string>>();
-        }
         if (j.contains("nodes"))
         {
-            // Todo: this is bad, we are using 2 times the required memory. Something can be improved here.
+            // TODO: this is bad, we are using 2 times the required memory. Something can be improved here.
             cfg.urls            = j.at("nodes").get<std::vector<node>>();
             cfg.eth_family_urls = std::vector<std::string>();
             cfg.eth_family_urls.value().reserve(cfg.urls.value().size());
@@ -218,10 +204,6 @@ namespace atomic_dex
         if (j.contains("rpc_urls"))
         {
             cfg.rpc_urls = j.at("rpc_urls").get<std::vector<node>>();
-        }
-        if (j.contains("allow_slp_unsafe_conf"))
-        {
-            cfg.allow_slp_unsafe_conf = j.at("allow_slp_unsafe_conf").get<bool>();
         }
         // Used for ZHTLC coins
         if (j.contains("light_wallet_d_servers"))
@@ -300,7 +282,7 @@ namespace atomic_dex
             break;
         case CoinType::PLG20:
             cfg.has_parent_fees_ticker = true;
-            cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "MATICTEST" : "MATIC";
+            cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "POLTEST" : "POL";
             cfg.is_erc_family          = true;
             break;
         case CoinType::Optimism:
@@ -313,6 +295,11 @@ namespace atomic_dex
             cfg.fees_ticker            = "ETH-ARB20";
             cfg.is_erc_family          = true;
             break;
+        case CoinType::Base:
+            cfg.has_parent_fees_ticker = true;
+            cfg.fees_ticker            = "ETH-BASE";
+            cfg.is_erc_family          = true;
+            break;
         case CoinType::EWT:
             cfg.has_parent_fees_ticker = true;
             cfg.fees_ticker            = "EWT";
@@ -321,11 +308,6 @@ namespace atomic_dex
         case CoinType::AVX20:
             cfg.has_parent_fees_ticker = true;
             cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "AVAXT" : "AVAX";
-            cfg.is_erc_family          = true;
-            break;
-        case CoinType::FTM20:
-            cfg.has_parent_fees_ticker = true;
-            cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "FTMT" : "FTM";
             cfg.is_erc_family          = true;
             break;
         case CoinType::HRC20:
@@ -353,11 +335,6 @@ namespace atomic_dex
             cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "GLMRT" : "GLMR";
             cfg.is_erc_family          = true;
             break;
-        case CoinType::HecoChain:
-            cfg.has_parent_fees_ticker = true;
-            cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "HTT" : "HT";
-            cfg.is_erc_family          = true;
-            break;
         case CoinType::SmartBCH:
             cfg.has_parent_fees_ticker = true;
             cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "SBCHT" : "SBCH";
@@ -372,10 +349,6 @@ namespace atomic_dex
             cfg.has_parent_fees_ticker = true;
             cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "RBTCT" : "RBTC";
             cfg.is_erc_family          = true;
-            break;
-        case CoinType::SLP:
-            cfg.has_parent_fees_ticker = true;
-            cfg.fees_ticker            = cfg.is_testnet.value_or(false) ? "tBCH" : "BCH";
             break;
         case CoinType::TENDERMINT:
             cfg.has_parent_fees_ticker = true;

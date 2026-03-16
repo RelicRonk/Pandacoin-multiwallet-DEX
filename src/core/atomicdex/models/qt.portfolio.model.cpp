@@ -17,9 +17,6 @@
 //! Qt
 #include <QJSValue>
 
-//! Deps
-#include <taskflow/taskflow.hpp>
-
 //! Project Headers
 #include "atomicdex/events/qt.events.hpp"
 #include "atomicdex/managers/qt.wallet.manager.hpp"
@@ -61,22 +58,18 @@ namespace atomic_dex
         {
             if (m_ticker_registry.find(ticker) != m_ticker_registry.end())
             {
-                SPDLOG_INFO("ticker {} not in m_ticker_registry", ticker);
+                SPDLOG_WARN("ticker {} not in m_ticker_registry", ticker);
                 continue;
             }
-            SPDLOG_INFO("initialize_portfolio for ticker: {}", ticker);
             const auto& kdf_system    = this->m_system_manager.get_system<kdf_service>();
             const auto& price_service = this->m_system_manager.get_system<global_price_service>();
             const auto& provider      = this->m_system_manager.get_system<komodo_prices_provider>();
             auto        coin          = kdf_system.get_coin_info(ticker);
-            SPDLOG_INFO("Building portfolio for ticker {}", coin.ticker);
             std::error_code ec;
             std::string balance       = kdf_system.get_balance_info(coin.ticker, ec);
-            SPDLOG_INFO("balance for ticker {}: {}", coin.ticker, balance);
             const QString   change_24h = retrieve_change_24h(provider, coin, *m_config, m_system_manager);
             portfolio_data  data{
                 .ticker                           = QString::fromStdString(coin.ticker),
-                .gui_ticker                       = QString::fromStdString(coin.gui_ticker),
                 .coin_type                        = QString::fromStdString(coin.type),
                 .name                             = QString::fromStdString(coin.name),
                 .balance                          = QString::fromStdString(balance),
@@ -90,9 +83,8 @@ namespace atomic_dex
                 .price_last_timestamp             = static_cast<int>(provider.get_last_price_timestamp(coin.ticker)),
                 .is_excluded                      = false,
                 .public_address                   = QString::fromStdString(kdf_system.address(coin.ticker, ec))};
-            // data.percent_main_currency = percent_functor(data.main_currency_balance);
-            data.display         = QString::fromStdString(coin.gui_ticker) + " (" + data.balance + ")";
-            data.ticker_and_name = QString::fromStdString(coin.gui_ticker) + data.name;
+            data.display         = QString::fromStdString(coin.ticker) + " (" + data.balance + ")";
+            data.ticker_and_name = QString::fromStdString(coin.ticker) + data.name;
             datas.push_back(std::move(data));
             m_ticker_registry.emplace(ticker);
         }
@@ -101,39 +93,7 @@ namespace atomic_dex
             beginInsertRows(QModelIndex(), this->m_model_data.count(), this->m_model_data.count() + tickers.size() - 1);
             this->m_model_data.append(datas);
             endInsertRows();
-            SPDLOG_INFO("size of the portfolio after batch inserted: {}", this->get_length());
             emit lengthChanged();
-        }
-    }
-
-    bool
-    portfolio_model::update_activation_status()
-    {
-        // This feels a bit heavy handed. There should be a better way to do this.
-        // Function may be unused.
-        const auto&        kdf_system    = this->m_system_manager.get_system<kdf_service>();
-        const auto         coins         = this->m_system_manager.get_system<portfolio_page>().get_global_cfg()->get_enabled_coins();
-
-        for (auto&& [_, coin]: coins)
-        {
-            if (m_ticker_registry.find(coin.ticker) == m_ticker_registry.end())
-            {
-                SPDLOG_WARN("[update_activation_status] ticker: {} not inserted yet in the model, skipping", coin.ticker);
-                return false;
-            }
-            const std::string& ticker = coin.ticker;
-            if (const auto res = this->match(this->index(0, 0), TickerRole, QString::fromStdString(ticker), 1, Qt::MatchFlag::MatchExactly);
-                not res.isEmpty())
-            {
-                std::error_code    ec;
-                const QModelIndex& idx         = res.at(0);
-                auto        coin_info          = kdf_system.get_coin_info(ticker);
-                QJsonObject status = nlohmann_json_object_to_qt_json_object(coin_info.activation_status);
-                update_value(ActivationStatus, status, idx, *this);
-                SPDLOG_DEBUG("updated activation status of: {}", ticker);
-                return true;
-            }
-            return false;
         }
     }
 
@@ -158,7 +118,6 @@ namespace atomic_dex
             if (const auto res = this->match(this->index(0, 0), TickerRole, QString::fromStdString(ticker), 1, Qt::MatchFlag::MatchExactly);
                 not res.isEmpty())
             {
-                // SPDLOG_INFO("[update_currency_values] for ticker: {}", coin.ticker);
                 std::error_code    ec;
                 const QModelIndex& idx                         = res.at(0);
                 const QString      main_currency_balance_value = QString::fromStdString(price_service.get_price_in_fiat(currency, ticker, ec));
@@ -188,7 +147,6 @@ namespace atomic_dex
                 auto        coin_info          = kdf_system.get_coin_info(ticker);
                 QJsonObject status = nlohmann_json_object_to_qt_json_object(coin_info.activation_status);
                 update_value(ActivationStatus, status, idx, *this);
-                // SPDLOG_DEBUG("updated currency values of: {}", ticker);
             }
         }
         return true;
@@ -197,7 +155,7 @@ namespace atomic_dex
     bool
     portfolio_model::update_balance_values(const std::vector<std::string>& tickers)
     {
-        SPDLOG_INFO("update_balance_values");
+        SPDLOG_DEBUG("UNUSED ??");
         for (auto&& ticker: tickers)
         {
             if (ticker.empty())
@@ -212,7 +170,6 @@ namespace atomic_dex
             
             if (const auto res = this->match(this->index(0, 0), TickerRole, QString::fromStdString(ticker), 1, Qt::MatchFlag::MatchExactly); not res.isEmpty())
             {
-                // SPDLOG_DEBUG("Updating balance values of: {}", ticker);
                 const auto&        kdf_system    = this->m_system_manager.get_system<kdf_service>();
                 const auto*        global_cfg    = this->m_system_manager.get_system<portfolio_page>().get_global_cfg();
                 const auto         coin          = global_cfg->get_coin_info(ticker);
@@ -269,8 +226,6 @@ namespace atomic_dex
         {
         case TickerRole:
             return item.ticker;
-        case GuiTickerRole:
-            return item.gui_ticker;
         case BalanceRole:
             return item.balance;
         case MainCurrencyBalanceRole:
@@ -386,10 +341,6 @@ namespace atomic_dex
         case MultiTickerPrice:
         {
             item.multi_ticker_price = value.toString();
-            // auto& trade_page        = m_system_manager.get_system<trading_page>();
-            /*trade_page.get_orders_widget()->determine_multi_ticker_total_amount(
-                item.ticker, item.multi_ticker_price.value(), item.is_multi_ticker_enabled, trade_page.get_market_pairs_mdl(), trade_page.get_market_mode(),
-                trade_page.get_volume());*/
             break;
         }
         case MultiTickerReceiveAmount:
@@ -403,11 +354,9 @@ namespace atomic_dex
             break;
         case PrivKey:
             item.priv_key = value.toString();
-            // emit dataChanged(index, index, {role});
             break;
         case PercentMainCurrency:
             item.percent_main_currency = value.toString();
-            // emit dataChanged(index, index, {role});
             break;
         case PriceProvider:
             item.price_provider = value.toString();
@@ -423,21 +372,6 @@ namespace atomic_dex
         return true;
     }
 
-    bool
-    portfolio_model::removeRows(int position, int rows, [[maybe_unused]] const QModelIndex& parent)
-    {
-        beginRemoveRows(QModelIndex(), position, position + rows - 1);
-        for (int row = 0; row < rows; ++row)
-        {
-            this->m_ticker_registry.erase(this->m_model_data.at(position).ticker.toStdString());
-            this->m_model_data.removeAt(position);
-            emit lengthChanged();
-        }
-        endRemoveRows();
-
-        return true;
-    }
-
     QString
     portfolio_model::coin_balance(QString coin)
     {
@@ -446,6 +380,8 @@ namespace atomic_dex
         if (not res.empty())
         {
             return QString(this->data(res.at(0), BalanceRole).toString());
+        } else {
+            SPDLOG_ERROR("res.empty in portfolio_model::coin_balance");
         }
         return "0";
     }
@@ -460,6 +396,8 @@ namespace atomic_dex
             if (not res.empty())
             {
                 this->removeRow(res.at(0).row());
+            } else {
+                SPDLOG_ERROR("res.empty in portfolio_model::disable_coins");
             }
         }
     }
@@ -475,7 +413,6 @@ namespace atomic_dex
     {
         return {
             {TickerRole, "ticker"},
-            {GuiTickerRole, "gui_ticker"},
             {CoinType, "type"},
             {NameRole, "name"},
             {BalanceRole, "balance"},
@@ -528,8 +465,8 @@ namespace atomic_dex
     void
     portfolio_model::reset()
     {
-        this->m_ticker_registry.clear();
         this->beginResetModel();
+        this->m_ticker_registry.clear();
         this->m_model_data.clear();
         this->endResetModel();
     }
@@ -543,6 +480,7 @@ namespace atomic_dex
     void
     portfolio_model::clean_priv_keys()
     {
+        //SPDLOG_DEBUG("UNUSED ??");
         const auto coins = this->m_system_manager.get_system<portfolio_page>().get_global_cfg()->get_enabled_coins();
         for (auto&& [coin, cfg]: coins)
         {
@@ -551,6 +489,8 @@ namespace atomic_dex
             if (not res.empty())
             {
                 update_value(PortfolioRoles::PrivKey, "", res.at(0), *this);
+            } else {
+                SPDLOG_ERROR("res.empty in portfolio_model::clean_priv_keys");
             }
         }
     }
@@ -561,6 +501,7 @@ namespace atomic_dex
     void
     portfolio_model::balance_update_handler(const QString& prev_balance, const QString& new_balance, const QString& ticker)
     {
+        spdlog::stopwatch sw; using namespace std::chrono;
         using namespace std::chrono;
         t_float_50 prev_balance_f = safe_float(prev_balance.toStdString());
         t_float_50 new_balance_f  = safe_float(new_balance.toStdString());
@@ -580,12 +521,12 @@ namespace atomic_dex
             this->m_dispatcher.trigger<balance_update_notification>(am_i_sender, amount, ticker, human_date, timestamp);
         }
         emit portfolioItemDataChanged();
+        if (sw.elapsed().count() > 0.02) { SPDLOG_DEBUG("Time elapsed in portfolio_model::balance_update_handler: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     void
     portfolio_model::adjust_percent_current_currency(QString balance_all)
     {
-        // SPDLOG_INFO("adjust_percent_current_currency");
         const auto coins = this->m_system_manager.get_system<portfolio_page>().get_global_cfg()->get_enabled_coins();
         for (auto&& [coin, cfg]: coins)
         {
@@ -602,6 +543,8 @@ namespace atomic_dex
                     update_value(PortfolioRoles::PercentMainCurrency, percent, res.at(0), *this);
                 }
                 // update_value(PortfolioRoles::PrivKey, "", res.at(0), *this);
+            } else {
+                SPDLOG_ERROR("res.empty in portfolio_model::adjust_percent_current_currency");
             }
         }
     }

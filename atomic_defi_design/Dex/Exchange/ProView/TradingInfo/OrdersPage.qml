@@ -19,12 +19,15 @@ Item {
 
     property var list_model: API.app.orders_mdl
     property var list_model_proxy: API.app.orders_mdl.orders_proxy_mdl
-    property int page_index
+    property int page_index: 0
 
     property alias title: order_list.title
     property alias items: order_list.items
 
     property bool is_history: false
+
+    visible: root.page_index > 0
+    enabled: visible
 
     function update()
     {
@@ -84,13 +87,12 @@ Item {
     {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.fill: parent
-        anchors.margins: 20
+        anchors.margins: 8
         anchors.bottomMargin: is_history ? 0 : 10
         spacing: 8
 
         RowLayout
         {
-            spacing: 8
             DefaultButton
             {
                 Layout.preferredHeight: 29
@@ -144,6 +146,7 @@ Item {
             {
                 visible: !root.is_history && list_model.length > 0
                 Layout.preferredHeight: 29
+                Layout.rightMargin: 6
                 radius: 7
                 label.font: DexTypo.body2
                 enabled: list_model.length > 0 && ! General.privacy_mode
@@ -181,6 +184,10 @@ Item {
                     id: swapCoinFilterIcon
                     source: Qaterial.Icons.swapHorizontal
                     color: Dex.CurrentTheme.foregroundColor
+                    //Component.onCompleted: {
+                    //    console.log("width = " + width) // 24
+                    //    console.log("parent.width = " + parent.width) // 77
+                    //}
 
                     DefaultMouseArea
                     {
@@ -215,7 +222,7 @@ Item {
                 DatePicker
                 {
                     id: min_date
-                    width: parent.width * 0.45
+                    width: parent.width * 0.44
                     titleText: qsTr("From")
                     minimumDate: default_min_date
                     maximumDate:  default_max_date
@@ -228,7 +235,7 @@ Item {
                 DatePicker
                 {
                     id: max_date
-                    width: parent.width * 0.45
+                    width: parent.width * 0.44
                     titleText: qsTr("To")
                     minimumDate: default_min_date
                     maximumDate: default_max_date

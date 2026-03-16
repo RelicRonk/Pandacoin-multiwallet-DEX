@@ -8,7 +8,7 @@ import "../Screens"
 import App 1.0 as Dex
 import Dex.Themes 1.0 as Dex
 
-Dex.DexListView
+Dex.DefaultListView
 {
     id: list
     interactive: false
@@ -53,7 +53,7 @@ Dex.DexListView
                 Layout.preferredWidth: _assetBalanceColumnWidth
                 Layout.fillHeight: true
                 h_align: Text.AlignRight
-                sort_type: sort_by_value
+                sort_type: sort_by_unset
                 text: qsTr("Balance")
             }
 
@@ -89,6 +89,7 @@ Dex.DexListView
                 Layout.preferredWidth: _assetProviderColumnWidth
                 Layout.fillHeight: true
                 h_align: Text.AlignHCenter
+                sort_type: sort_by_unset
                 text: qsTr("Source")
             }
         }
@@ -121,14 +122,14 @@ Dex.DexListView
                 Layout.preferredWidth: _assetNameColumnWidth
                 Layout.leftMargin: 15
 
-                Dex.DexImage {
+                Dex.DefaultImage {
                     id: assetImage
                     anchors.verticalCenter: parent.verticalCenter
                     source: Dex.General.coinIcon(ticker)
                     width: 30
                     height: 30
 
-                    Dex.DexRectangle
+                    Dex.DefaultRectangle
                     {
                         anchors.centerIn: parent
                         anchors.fill: parent
@@ -209,6 +210,7 @@ Dex.DexListView
                             return qsTr("Activating: ") + x + "%"
                         }
                     }
+                    // this is being called for every enabled coin when switching to Portfolio or sorting
                     return parseFloat(balance).toFixed(8)
                 }
 
@@ -265,7 +267,7 @@ Dex.DexListView
                 Layout.fillHeight: true
                 Layout.preferredWidth: _assetProviderColumnWidth
 
-                Dex.DexImage {
+                Dex.DefaultImage {
                     id: priceProviderIcon
                     enabled: priceProvider !== "unknown"
                     visible: enabled
@@ -281,7 +283,7 @@ Dex.DexListView
                         hoverEnabled: true
                     }
 
-                    Dex.DexTooltip
+                    Dex.DefaultTooltip
                     {
                         contentItem: Dex.DexLabel
                         {

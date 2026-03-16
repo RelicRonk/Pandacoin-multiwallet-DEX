@@ -19,7 +19,7 @@ ColumnLayout
     property int           topMarginAfterTitle: 30
     
     property alias         flickable:           modal_flickable
-    property int           flickMax:            500
+    property int           flickMax:            window.height - 280
     property alias         header:              _header.data
     default property alias content:             _innerLayout.data
     property alias         contentSpacing:      _innerLayout.spacing
@@ -28,7 +28,12 @@ ColumnLayout
     Layout.fillWidth: true
     visible: true
     Layout.fillHeight: false
-    Layout.maximumHeight: window.height - 50
+    Layout.maximumHeight: flickMax
+
+    //Component.onCompleted: {
+    //    console.log("MultipageModalContent root.flickMax =" + root.flickMax) // 500, 708, 1442
+    //    console.log("MultipageModalContent height = " + height) // 190
+    //}
 
     DexLabel
     {
@@ -64,11 +69,11 @@ ColumnLayout
     {
         id: modal_flickable
         flickableDirection: Flickable.VerticalFlick
-
+        boundsBehavior: Flickable.StopAtBounds
         Layout.topMargin: root.topMarginAfterTitle
         Layout.fillWidth: true
         Layout.preferredHeight: contentHeight
-        Layout.maximumHeight: flickMax
+        Layout.maximumHeight: flickMax - 240
         contentHeight: _innerLayout.height
 
         ColumnLayout

@@ -21,7 +21,6 @@
 #include "atomicdex/pages/qt.portfolio.page.hpp"
 #include "atomicdex/pages/qt.settings.page.hpp"
 #include "atomicdex/pages/qt.wallet.page.hpp"
-#include "atomicdex/services/price/coingecko/coingecko.wallet.charts.hpp"
 #include "atomicdex/services/price/global.provider.hpp"
 
 namespace atomic_dex
@@ -45,6 +44,7 @@ namespace atomic_dex
     void
     portfolio_page::update()
     {
+        //SPDLOG_DEBUG("UNUSED ??");
     }
 
     portfolio_page::~portfolio_page() {}
@@ -54,7 +54,6 @@ namespace atomic_dex
     {
         if (this->m_current_balance_all != current_fiat_all_balance)
         {
-            // SPDLOG_INFO("current_balance_all changed previous: {}, new: {}", m_current_balance_all.toStdString(), current_fiat_all_balance.toStdString());
             this->m_current_balance_all = std::move(current_fiat_all_balance);
             emit       onFiatBalanceAllChanged();
             const auto currency = m_system_manager.get_system<settings_page>().get_current_currency().toStdString();
@@ -62,7 +61,6 @@ namespace atomic_dex
             {
                 m_main_current_balance_all = m_current_balance_all;
                 emit onMainFiatBalanceAllChanged();
-                m_system_manager.get_system<coingecko_wallet_charts_service>().manual_refresh("set_current_balance_fiat_all");
             }
         }
     }
@@ -76,8 +74,7 @@ namespace atomic_dex
     void
     portfolio_page::on_update_portfolio_values_event(const update_portfolio_values& evt)
     {
-        // SPDLOG_DEBUG("Updating portfolio values with model: {}", evt.with_update_model);
-
+        spdlog::stopwatch sw;
         bool res = true;
         if (evt.with_update_model)
         {
@@ -94,6 +91,8 @@ namespace atomic_dex
             set_current_balance_fiat_all(QString::fromStdString(fiat_balance_std));
             m_portfolio_mdl->adjust_percent_current_currency(QString::fromStdString(fiat_balance_std));
         }
+        using namespace std::chrono;
+        if (sw.elapsed().count() > 0.06) { SPDLOG_DEBUG("Time elapsed for portfolio_page::on_update_portfolio_values_event: {}", duration_cast<milliseconds>(sw.elapsed())); }
     }
 
     QStringList
@@ -105,6 +104,7 @@ namespace atomic_dex
     QStringList
     atomic_dex::portfolio_page::get_all_coins_by_type(const QString& coin_type) const
     {
+        SPDLOG_DEBUG("UNUSED ??");
         QStringList enabled_coins;
         const auto& portfolio_list = this->get_portfolio()->get_underlying_data();
         enabled_coins.reserve(portfolio_list.count());
@@ -155,69 +155,10 @@ namespace atomic_dex
         m_global_cfg_mdl->update_status(coins, false);
     }
 
-    WalletChartsCategories
-    portfolio_page::get_chart_category() const
-    {
-        return m_current_chart_category;
-    }
-    void
-    portfolio_page::set_chart_category(WalletChartsCategories category)
-    {
-        SPDLOG_INFO("new m_current_chart_category: {}", m_current_chart_category);
-        SPDLOG_INFO("qint32(category): {}", qint32(category));
-        SPDLOG_INFO("new chart category: {}", QMetaEnum::fromType<WalletChartsCategories>().valueToKey(category));
-        if (m_current_chart_category != category)
-        {
-            m_current_chart_category = category;
-            QSettings& settings      = entity_registry_.ctx<QSettings>();
-            settings.setValue("WalletChartsCategory", qint32(category));
-            if (m_system_manager.get_system<kdf_service>().is_kdf_running() && m_system_manager.has_system<coingecko_wallet_charts_service>())
-            {
-                m_system_manager.get_system<coingecko_wallet_charts_service>().manual_refresh("set_chart_category");
-            }
-            emit chartCategoryChanged();
-        }
-    }
-
-    bool
-    portfolio_page::is_chart_busy() const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().is_busy();
-    }
-
-    QVariant
-    portfolio_page::get_charts() const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().get_charts();
-    }
-
-    QString
-    portfolio_page::get_min_total_chart() const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().get_min_total();
-    }
-
-    QString
-    portfolio_page::get_max_total_chart() const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().get_max_total();
-    }
-
-    QVariant
-    portfolio_page::get_wallet_stats() const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().get_wallet_stats();
-    }
-
     QString
     portfolio_page::get_main_balance_fiat_all() const
     {
         return m_main_current_balance_all;
     }
 
-    int
-    portfolio_page::get_neareast_point(int timestamp) const
-    {
-        return m_system_manager.get_system<coingecko_wallet_charts_service>().get_neareast_point(timestamp);
-    }
 } // namespace atomic_dex
