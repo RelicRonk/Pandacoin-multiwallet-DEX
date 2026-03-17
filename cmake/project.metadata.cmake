@@ -2,12 +2,11 @@
 set(DEX_API "kdf_kwd")
 set(DEX_RPCPORT 7762)
 set(DEX_RPC "http://127.0.0.1:7762")
-<<<<<<< HEAD
 set(DEX_PROJECT_NAME "Pandacoin-multiwallet-DEX")
 set(DEX_DISPLAY_NAME "Pandacoin-multiwallet-DEX")
 set(DEX_MAINTENANCE_TOOL_NAME "Pandacoin-multiwallet-DEX Maintenance Tool")
 set(DEX_COMPANY "PandacoinTech")
-set(DEX_WEBSITE "https://atomicdex.io/")
+set(DEX_WEBSITE "https://kmdclassic.com")
 set(DEX_VERSION "0.8.3")
 set(DEX_SUPPORT_PAGE "https://support.komodoplatform.com/support/home")
 set(DEX_DISCORD "https://https://discord.gg/9QvEgDp")
@@ -17,21 +16,7 @@ set(DEX_SECOND_PRIMARY_COIN "PND")                                              
 set(DEX_REPOSITORY_OWNER ${DEX_COMPANY})
 set(DEX_REPOSITORY_NAME "Pandacoin-multiwallet-DEX-desktop")
 set(DEX_CHECKSUM_API_URL "https://komodo.earth/static/checksum.json")
-=======
-set(DEX_PROJECT_NAME "komodo-wallet")
-set(DEX_DISPLAY_NAME "Komodo Wallet")
-set(DEX_MAINTENANCE_TOOL_NAME "Komodo Wallet Maintenance Tool")
-set(DEX_COMPANY "KomodoPlatform")
-set(DEX_WEBSITE "https://kmdclassic.com")
-set(DEX_VERSION "0.8.2")
-set(DEX_SUPPORT_PAGE "https://support.komodoplatform.com/support/home")
-set(DEX_DISCORD "https://discord.gg/ZBZnx4CxXb")
-set(DEX_TWITTER "https://x.com/komodo_classic")
-set(DEX_PRIMARY_COIN "KMD")                                                    ## Main coin of the DEX, will be enabled by default and will be the default left ticker for trading
-set(DEX_SECOND_PRIMARY_COIN "LTC-segwit")                                      ## Second main coin of the DEX, will be enabled by default and will be the default right ticker for trading
-set(DEX_REPOSITORY_OWNER ${DEX_COMPANY})
-set(DEX_REPOSITORY_NAME "komodo-wallet-desktop")
->>>>>>> 25636d8b4802eb10f87fd857341be4b46d0d9f45
+
 if (APPLE)
     set(DEX_APPDATA_FOLDER "Pandacoin-multiwallet-DEX")
 else ()
