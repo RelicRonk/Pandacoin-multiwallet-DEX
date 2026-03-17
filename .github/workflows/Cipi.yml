@@ -3,10 +3,8 @@ name: Pandacoin-multiwallet-DEX CI
 on:
 
   workflow_dispatch:
-  push:
-    branches:
+      branches:
       - nogeo
-
 env:
   DEX_API: "kdf_kwd"
   DEX_RPCPORT: 7762
