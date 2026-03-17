@@ -10,13 +10,8 @@
 
 namespace
 {
-<<<<<<< HEAD
-    constexpr const char*                 g_komodo_prices_endpoint = "https://cache.defi-stats.komodo.earth";
-    constexpr const char*                 g_komodo_prices_endpoint_fallback = "https://prices.cipig.net:1717";
-=======
     constexpr const char*                 g_komodo_prices_endpoint = "https://prices.cipig.net:1717";
     constexpr const char*                 g_komodo_prices_endpoint_fallback = "https://defistats.gleec.com";
->>>>>>> 25636d8b4802eb10f87fd857341be4b46d0d9f45
 
     web::http::client::http_client_config g_komodo_prices_cfg{[]()
                                                               {
@@ -82,14 +77,8 @@ namespace atomic_dex::komodo_prices::api
     pplx::task<web::http::http_response>
     async_market_infos(bool fallback)
     {
-<<<<<<< HEAD
-        web::http::http_request req;
-        req.set_method(web::http::methods::GET);
-        std::string endpoint = fallback ? "api/v2/tickers?expire_at=21600" : "api/v3/prices/tickers_v2.json?expire_at=21600";
-        if (fallback)
-=======
         try
->>>>>>> 25636d8b4802eb10f87fd857341be4b46d0d9f45
+
         {
             web::http::http_request req;
             req.set_method(web::http::methods::GET);
