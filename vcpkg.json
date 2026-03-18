@@ -9,11 +9,9 @@
     "openssl",
     "nlohmann-json",
     "range-v3",
-    {
-      "name": "libsodium",
-      "version-string": "1.0.18"
-    },
+    "libsodium",
     "fmt",
+    "spdlog",
     {
       "name": "spdlog",
       "features": [
@@ -21,6 +19,7 @@
       ],
       "platform": "windows"
     },
+    "date",
     {
       "name": "date",
       "features": [
