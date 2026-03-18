@@ -12,6 +12,7 @@
     "libsodium",
     "fmt",
     "spdlog",
+    { "name": "libsodium", "version-string": "1.0.18" }
     {
       "name": "spdlog",
       "features": [
