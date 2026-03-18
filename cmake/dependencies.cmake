@@ -86,10 +86,10 @@ add_library(antara::refl-cpp ALIAS refl-cpp)
 ##! Sodium
 add_library(komodo-sodium INTERFACE)
 ##if (CONAN_ENABLED)
-##    find_package(libsodium REQUIRED)
+    find_package(libsodium REQUIRED)
 ##else ()
-    find_package(unofficial-sodium CONFIG REQUIRED)
-    target_link_libraries(komodo-sodium INTERFACE unofficial-sodium::sodium)
+##    find_package(unofficial-sodium CONFIG REQUIRED)
+##    target_link_libraries(komodo-sodium INTERFACE unofficial-sodium::sodium)
 ##endif ()
 add_library(komodo-sodium::sodium ALIAS komodo-sodium)
 
